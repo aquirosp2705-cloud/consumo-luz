@@ -18,6 +18,9 @@ h2{font-size:18px;margin:0 0 12px;color:var(--azul)}
 .form-grid{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:10px;align-items:end}
 label{font-weight:bold;font-size:12px;color:#374151}
 input{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;font-size:14px;background:var(--amarillo)}
+.cellinput{min-width:90px;padding:6px 7px;border:1px solid #d6d3d1;border-radius:7px;font-size:12px;background:var(--amarillo);text-align:right}
+.cellinput.mes{min-width:105px;text-align:left;font-weight:bold}
+.cellinput:focus{outline:2px solid #93c5fd;background:#fff7cc}
 button{border:0;border-radius:10px;padding:11px 14px;font-weight:bold;cursor:pointer;background:var(--azul);color:white}
 button.sec{background:#64748b} button.danger{background:#b91c1c} button.good{background:#15803d}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -47,10 +50,10 @@ td:first-child{background:white;font-weight:bold}
   <div class="form-grid">
     <div><label>Mes</label><input id="mes" placeholder="Ej: Mayo 2026"></div>
     <div><label>Consumo $</label><input id="consumoDolares" type="number" step="0.01"></div>
-    <div><label>Impuestos $</label><input id="impuestos" type="text" inputmode="decimal" placeholder="Ej: 12.50+3.40"></div>
+    <div><label>Impuestos $</label><input id="impuestos" type="text" inputmode="text" autocomplete="off" placeholder="Ej: 12.50+3.40"></div>
     <div><label>Lectura</label><input id="lectura" type="number" step="1"></div>
     <div><label>Inyectado mes kWh</label><input id="inyectadaMes" type="number" step="1"></div>
-    <div><label>Subsidio $</label><input id="subsidio" type="text" inputmode="decimal" placeholder="Ej: 20+5.35"></div>
+    <div><label>Subsidio $</label><input id="subsidio" type="text" inputmode="text" autocomplete="off" placeholder="Ej: 20+5.35"></div>
   </div>
   <div class="actions">
     <button onclick="agregarPlanilla()">➕ Agregar planilla</button>
@@ -59,7 +62,7 @@ td:first-child{background:white;font-weight:bold}
     <button class="danger" onclick="reiniciarDatos()">↩️ Restaurar datos del Excel</button>
   </div>
   <div class="notice">
-    Columnas amarillas = datos que ingresas de la planilla. En Impuestos $ y Subsidio $ puedes escribir sumas como 12.50+3.40 y presionar Enter para obtener el total. Las demás columnas se recalculan por mes. 
+    Columnas amarillas = datos editables. Puedes corregir cualquier línea histórica directamente en la tabla. En Impuestos $ y Subsidio $ puedes escribir sumas como 12.50+3.40; usa el teclado normal/texto para que aparezca el signo + y presiona Enter o sal del campo para obtener el total. Las demás columnas se recalculan por mes. 
     El consumo mensual se calcula con <b>lectura actual − lectura anterior</b>. El porcentaje inyectado se calcula como <b>inyectado mes / consumo sin solar</b>.
   </div>
 </section>
@@ -212,6 +215,42 @@ function renderKpis(ultimo){
   document.getElementById('kpiFactura').textContent = '$ ' + money(ultimo.valorFactura);
 }
 
+
+function valorCampo(v, decimales=2){
+  const n = num(v);
+  return n ? Number(n).toFixed(decimales) : '';
+}
+
+function actualizarCampo(idx, campo, valor){
+  if(idx < 0 || !datos[idx]) return;
+  if(campo === 'mes') {
+    datos[idx][campo] = String(valor || '').trim();
+  } else {
+    datos[idx][campo] = num(valor);
+  }
+  recalcularYRenderizar();
+}
+
+function procesarCeldaSuma(el, idx, campo){
+  try {
+    const total = evaluarSuma(el.value);
+    if(isNaN(total)) throw new Error('Valor inválido');
+    el.value = total ? total.toFixed(2) : '';
+    actualizarCampo(idx, campo, el.value);
+  } catch(e) {
+    alert('Aquí puedes ingresar valores sumados con +. Ejemplo: 12.50+3.40');
+    el.focus();
+  }
+}
+
+function enterSumaCelda(e, el, idx, campo){
+  if(e.key === 'Enter') {
+    e.preventDefault();
+    procesarCeldaSuma(el, idx, campo);
+    el.blur();
+  }
+}
+
 function renderTabla(rows){
   const headers = [
     'Mes','Consumo $','Impuestos $','Total sin subsidio $','% impuestos',
@@ -226,24 +265,24 @@ function renderTabla(rows){
     const idx = datos.findIndex(d => d.orden === r.orden);
     const neg = r.consumoMes < 0 ? ' neg' : '';
     html += `<tr>
-      <td>${r.mes}</td>
-      <td class="inputcol">$ ${money(r.consumoDolares)}</td>
-      <td class="inputcol">$ ${money(r.impuestos)}</td>
+      <td class="inputcol"><input class="cellinput mes" type="text" value="${String(r.mes || '').replace(/"/g,'&quot;')}" onchange="actualizarCampo(${idx}, 'mes', this.value)"></td>
+      <td class="inputcol"><input class="cellinput" type="text" inputmode="decimal" value="${valorCampo(r.consumoDolares,2)}" onchange="actualizarCampo(${idx}, 'consumoDolares', this.value)"></td>
+      <td class="inputcol"><input class="cellinput" type="text" inputmode="text" autocomplete="off" value="${valorCampo(r.impuestos,2)}" onkeydown="enterSumaCelda(event, this, ${idx}, 'impuestos')" onblur="procesarCeldaSuma(this, ${idx}, 'impuestos')"></td>
       <td class="calc">$ ${money(r.totalSinSubsidio)}</td>
       <td class="calc">${pct(r.pctImpuestos)}</td>
       <td class="calc">${qty(r.lecturaAnterior)}</td>
-      <td class="inputcol">${qty(r.lectura)}</td>
+      <td class="inputcol"><input class="cellinput" type="text" inputmode="numeric" value="${valorCampo(r.lectura,0)}" onchange="actualizarCampo(${idx}, 'lectura', this.value)"></td>
       <td class="calc${neg}">${qty(r.consumoMes)}</td>
       <td class="calc">$ ${dec(r.costoKw)}</td>
       <td class="calc">$ ${dec(r.costoKwConImpuestos)}</td>
       <td class="calc">${qty(r.energiaTotal)}</td>
       <td class="calc">${qty(r.inyectadaAcum)}</td>
-      <td class="inputcol">${qty(r.inyectadaMes)}</td>
+      <td class="inputcol"><input class="cellinput" type="text" inputmode="numeric" value="${valorCampo(r.inyectadaMes,0)}" onchange="actualizarCampo(${idx}, 'inyectadaMes', this.value)"></td>
       <td class="calc">${pct(r.pctInyectada)}</td>
       <td class="calc">${qty(r.netoConsumo)}</td>
       <td class="calc ok">${qty(r.consumoSinSolar)}</td>
       <td class="calc">${dec(r.promDia)}</td>
-      <td class="inputcol">$ ${money(r.subsidio)}</td>
+      <td class="inputcol"><input class="cellinput" type="text" inputmode="text" autocomplete="off" value="${valorCampo(r.subsidio,2)}" onkeydown="enterSumaCelda(event, this, ${idx}, 'subsidio')" onblur="procesarCeldaSuma(this, ${idx}, 'subsidio')"></td>
       <td class="calc">$ ${money(r.valorFactura)}</td>
       <td class="calc">$ ${dec(r.facturaKw)}</td>
       <td><button class="danger" onclick="eliminarFila(${idx})">Eliminar</button></td>
