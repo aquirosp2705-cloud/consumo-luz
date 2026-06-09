@@ -5,201 +5,445 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Consumo Energía Pacífica</title>
 <style>
-:root{--azul:#1f4e79;--azul2:#eaf2f8;--amarillo:#fff2cc;--verde:#d9ead3;--gris:#f6f7f9;--borde:#d7dde5;--rojo:#b91c1c;--naranja:#ca8a04}
+:root {
+  --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
+}
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--gris);color:#1f2937}
 header{background:var(--azul);color:white;padding:18px 20px;text-align:center}
 header h1{margin:0;font-size:22px} header p{margin:6px 0 0;font-size:13px;opacity:.95}
-main{max-width:1600px;margin:auto;padding:16px}
+main{max-width:1450px;margin:auto;padding:16px}
 .card{background:white;border:1px solid var(--borde);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:0 2px 8px rgba(15,23,42,.05)}
 h2{font-size:18px;margin:0 0 12px;color:var(--azul)}
-.form-grid{display:grid;grid-template-columns:repeat(7,minmax(120px,1fr));gap:10px;align-items:end}
+.form-grid{display:grid;grid-template-columns:repeat(8,minmax(120px,1fr));gap:10px;align-items:end}
 label{font-weight:bold;font-size:12px;color:#374151;display:block;margin-bottom:4px}
 input,select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;font-size:14px;background:var(--amarillo)}
-button{border:0;border-radius:10px;padding:10px 12px;font-weight:bold;cursor:pointer;background:var(--azul);color:white;font-size:12px}
-button.sec{background:#64748b} button.danger{background:var(--rojo)} button.good{background:#15803d} button.warn{background:var(--naranja)}
+select{appearance:auto;-webkit-appearance:menulist;background-color:#fff2cc}
+button{border:0;border-radius:10px;padding:10px 13px;font-weight:bold;cursor:pointer;background:var(--azul);color:white}
+button.sec{background:#64748b} button.danger{background:#b91c1c} button.good{background:#15803d} button.warn{background:#b45309}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.notice{font-size:13px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;margin-top:10px;line-height:1.35}
-.summary-head{display:grid;grid-template-columns:minmax(220px,320px) 1fr;gap:14px;align-items:end;margin-bottom:12px}
-.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.notice{font-size:13px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;margin-top:10px}
+.kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
 .kpi{background:var(--azul2);border:1px solid #cfe2f3;border-radius:12px;padding:12px;text-align:center}
-.kpi b{display:block;font-size:20px;color:var(--azul)} .kpi span{font-size:12px;color:#475569}
+.kpi b{display:block;font-size:19px;color:var(--azul)} .kpi span{font-size:12px;color:#475569}
 .table-wrap{overflow:auto;border:1px solid var(--borde);border-radius:12px;background:white;max-height:68vh}
-table{border-collapse:collapse;width:100%;font-size:12px;min-width:1950px}
-th,td{border-bottom:1px solid #e5e7eb;border-right:1px solid #eef2f7;padding:7px;text-align:right;white-space:nowrap;vertical-align:middle}
+table{border-collapse:collapse;width:100%;font-size:12px;min-width:1850px}
+th,td{border-bottom:1px solid #e5e7eb;border-right:1px solid #eef2f7;padding:7px;text-align:right;white-space:nowrap}
 th{position:sticky;top:0;background:var(--azul);color:white;z-index:2;text-align:center}
 td:first-child, th:first-child{position:sticky;left:0;z-index:3;text-align:left}
 td:first-child{background:white;font-weight:bold}
-.inputcol{background:var(--amarillo)} .calc{background:#f8fafc} .ok{background:var(--verde)} .neg{color:var(--rojo);font-weight:bold}
+.inputcol{background:var(--amarillo)} .calc{background:#f8fafc} .ok{background:var(--verde)} .neg{color:#b91c1c;font-weight:bold}
 .small{font-size:12px;color:#64748b}
-.row-actions{display:flex;gap:5px;justify-content:center}
-.editInput{min-width:85px;padding:7px;font-size:12px} .editMonth{min-width:90px} .editYear{min-width:75px}
-.month-pair{display:grid;grid-template-columns:1fr .8fr;gap:5px}
-@media(max-width:900px){.form-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.summary-head{grid-template-columns:1fr}}
+.editing{outline:3px solid #f59e0b}
+@media(max-width:1000px){.form-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
 <header>
   <h1>Reporte Mensual de Consumo de Energía</h1>
-  <p>Ingreso de planillas, edición de histórico, respaldo/restauración y resumen seleccionable por mes.</p>
+  <p>Ingreso de planillas + cálculos automáticos. El reporte muestra el último mes arriba.</p>
 </header>
 <main>
+
 <section class="card">
-  <h2>Ingresar nueva planilla</h2>
+  <h2 id="formTitle">Ingresar nueva planilla</h2>
   <div class="form-grid">
-    <div><label>Mes</label><select id="mesSelect"></select></div>
-    <div><label>Año</label><select id="anioSelect"></select></div>
+    <div><label>Mes</label><select id="month"></select></div>
+    <div><label>Año</label><select id="year"></select></div>
     <div><label>Consumo $</label><input id="consumoDolares" type="number" step="0.01"></div>
     <div><label>Impuestos $</label><input id="impuestos" type="text" inputmode="text" placeholder="Ej: 12.50+3.40"></div>
     <div><label>Lectura</label><input id="lectura" type="number" step="1"></div>
     <div><label>Inyectado mes kWh</label><input id="inyectadaMes" type="number" step="1"></div>
     <div><label>Subsidio $</label><input id="subsidio" type="text" inputmode="text" placeholder="Ej: 20+5.35"></div>
+    <div><button id="btnGuardar" onclick="guardarPlanilla()">➕ Agregar</button></div>
   </div>
   <div class="actions">
-    <button onclick="agregarPlanilla()">Agregar planilla</button>
-    <button class="good" onclick="exportarCSV()">Exportar Excel/CSV</button>
-    <button class="good" onclick="respaldarDatos()">Respaldar datos</button>
-    <button class="sec" onclick="document.getElementById('archivoRespaldo').click()">Restaurar respaldo</button>
-    <button class="sec" onclick="limpiarFormulario()">Limpiar campos</button>
-    <button class="danger" onclick="reiniciarDatos()">Restaurar datos del Excel</button>
-    <input id="archivoRespaldo" type="file" accept="application/json,.json" style="display:none" onchange="restaurarRespaldo(event)">
+    <button class="sec" onclick="cancelarEdicion()">Cancelar edición</button>
+    <button class="good" onclick="respaldarDatos()">💾 Respaldar datos</button>
+    <button class="sec" onclick="document.getElementById('restoreFile').click()">📂 Restaurar respaldo</button>
+    <input id="restoreFile" type="file" accept=".json,application/json" style="display:none" onchange="restaurarRespaldo(event)">
+    <button class="good" onclick="exportarCSV()">⬇️ Exportar CSV</button>
+    <button class="danger" onclick="reiniciarDatos()">↩️ Restaurar histórico original</button>
   </div>
   <div class="notice">
-    El campo <b>Mes</b> y <b>Año</b> ahora son desplegables reales. En <b>Impuestos $</b> y <b>Subsidio $</b> puedes escribir sumas como <b>12.50+3.40+1.25</b>; al presionar Enter o guardar se convierte al total. Usa <b>Respaldar datos</b> para guardar lo que ingresaste y <b>Restaurar respaldo</b> para recuperarlo.
+    Impuestos $ y Subsidio $ aceptan sumas: escribe por ejemplo <b>12.50+3.40</b> y presiona Enter o sal de la celda. 
+    Cada fila histórica tiene botón <b>Editar</b>. Los datos se guardan automáticamente en este navegador.
   </div>
 </section>
+
 <section class="card">
   <h2>Resumen mes</h2>
-  <div class="summary-head">
-    <div><label>Elegir mes para ver resumen</label><select id="resumenSelect" onchange="actualizarResumenSeleccionado()"></select></div>
-    <p class="small">Puedes revisar cualquier mes cargado, no solo el último.</p>
-  </div>
-  <div class="kpis">
-    <div class="kpi"><b id="kpiMes">-</b><span>Mes seleccionado</span></div>
-    <div class="kpi"><b id="kpiConsumo">-</b><span>Consumo neto kWh</span></div>
-    <div class="kpi"><b id="kpiCosto">-</b><span>Costo total $/kWh</span></div>
-    <div class="kpi"><b id="kpiIny">-</b><span>% energía inyectada</span></div>
+  <div class="form-grid" style="grid-template-columns:minmax(220px,330px) repeat(5,1fr);">
+    <div><label>Elegir mes a mostrar</label><select id="resumenSelect" onchange="renderResumenSeleccionado()"></select></div>
+    <div class="kpi"><b id="kpiConsumo">-</b><span>Consumo mes kWh</span></div>
+    <div class="kpi"><b id="kpiCosto">-</b><span>$/kWh con impuestos</span></div>
+    <div class="kpi"><b id="kpiIny">-</b><span>% inyectada</span></div>
     <div class="kpi"><b id="kpiFactura">-</b><span>Valor factura $</span></div>
+    <div class="kpi"><b id="kpiSinSolar">-</b><span>Consumo sin solar kWh</span></div>
   </div>
 </section>
+
 <section class="card">
-  <h2>Reporte mensual línea por línea</h2>
-  <p class="small">Último mes arriba. Presiona <b>Editar</b> para modificar una línea histórica.</p>
-  <div class="table-wrap"><table id="tabla"></table></div>
+  <h2>Reporte línea por línea</h2>
+  <div class="table-wrap">
+    <table id="tabla"></table>
+  </div>
 </section>
+
 </main>
 <script>
-const datosIniciales = [{"orden": 1, "mes": "jul", "consumoDolares": 87.87, "impuestos": 32.82, "lectura": 5554.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 120.69, "pctImp": 0.373506, "kw": -564.106636, "cKw": -0.155768, "cKwImp": -0.213949, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": null, "sinSolar": null, "promDia": null, "valorFactura": null}}, {"orden": 2, "mes": "ago", "consumoDolares": 139.07, "impuestos": 49.92, "lectura": 6372.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 188.99, "pctImp": 0.358956, "kw": 1118.0, "cKw": 0.124392, "cKwImp": 0.169043, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 818.0, "sinSolar": null, "promDia": 27.266667, "valorFactura": null}}, {"orden": 3, "mes": "sep", "consumoDolares": 146.93, "impuestos": 52.55, "lectura": 7536.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 199.48, "pctImp": 0.357653, "kw": 1164.0, "cKw": 0.126229, "cKwImp": 0.171375, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 1164.0, "sinSolar": null, "promDia": 38.8, "valorFactura": null}}, {"orden": 4, "mes": "oct", "consumoDolares": 73.99, "impuestos": 28.21, "lectura": 8225.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 102.2, "pctImp": 0.381268, "kw": -475.0, "cKw": -0.155768, "cKwImp": -0.215158, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 689.0, "sinSolar": null, "promDia": 22.966667, "valorFactura": null}}, {"orden": 5, "mes": "nov", "consumoDolares": 62.29, "impuestos": 24.34, "lectura": 8823.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 86.63, "pctImp": 0.390753, "kw": -91.0, "cKw": -0.684505, "cKwImp": -0.951978, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 598.0, "sinSolar": null, "promDia": 19.933333, "valorFactura": null}}, {"orden": 6, "mes": "dic", "consumoDolares": 87.52, "impuestos": 32.63, "lectura": 9639.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 120.15, "pctImp": 0.372829, "kw": 218.0, "cKw": 0.401468, "cKwImp": 0.551147, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 816.0, "sinSolar": null, "promDia": 27.2, "valorFactura": null}}, {"orden": 7, "mes": "ene", "consumoDolares": 94.21, "impuestos": 36.65, "lectura": 10551.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 130.86, "pctImp": 0.389025, "kw": 96.0, "cKw": 0.981354, "cKwImp": 1.363125, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 912.0, "sinSolar": null, "promDia": 30.4, "valorFactura": null}}, {"orden": 8, "mes": "feb", "consumoDolares": 89.55, "impuestos": 34.78, "lectura": 11421.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 124.33, "pctImp": 0.388386, "kw": -42.0, "cKw": -2.132143, "cKwImp": -2.960238, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 870.0, "sinSolar": null, "promDia": 29.0, "valorFactura": null}}, {"orden": 9, "mes": "mar", "consumoDolares": 82.9, "impuestos": 32.08, "lectura": 12231.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 114.98, "pctImp": 0.386972, "kw": -60.0, "cKw": -1.381667, "cKwImp": -1.916333, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 810.0, "sinSolar": null, "promDia": 27.0, "valorFactura": null}}, {"orden": 10, "mes": "abr", "consumoDolares": 95.54, "impuestos": 37.19, "lectura": 13155.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 132.73, "pctImp": 0.389261, "kw": 114.0, "cKw": 0.83807, "cKwImp": 1.164298, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 924.0, "sinSolar": null, "promDia": 30.8, "valorFactura": null}}, {"orden": 11, "mes": "may", "consumoDolares": 73.81, "impuestos": 28.4, "lectura": 13883.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 102.21, "pctImp": 0.384772, "kw": -196.0, "cKw": -0.376582, "cKwImp": -0.52148, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 728.0, "sinSolar": null, "promDia": 24.266667, "valorFactura": null}}, {"orden": 12, "mes": "jun", "consumoDolares": 101.36, "impuestos": 38.96, "lectura": 14762.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 140.32, "pctImp": 0.38, "kw": 879.0, "cKw": 0.115313, "cKwImp": 0.159132, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 879.0, "sinSolar": null, "promDia": 29.3, "valorFactura": null}}, {"orden": 13, "mes": "jul", "consumoDolares": 97.3, "impuestos": 37.36, "lectura": 101.0, "inyectadaMes": 0, "subsidio": 0, "legacy": {"totalSinSub": 134.66, "pctImp": 0.38, "kw": 851.0, "cKw": 0.114336, "cKwImp": 0.157784, "energiaTotal": null, "inyectadaAcum": null, "pctIny": null, "neto": 879.0, "sinSolar": null, "promDia": 29.3, "valorFactura": null}}, {"orden": 14, "mes": "Ago 2023", "consumoDolares": 49.28, "impuestos": 20.16, "lectura": 597.0, "inyectadaMes": 80.0, "subsidio": 0, "legacy": {"totalSinSub": 69.44, "pctImp": 0.41, "kw": 496.0, "cKw": 0.099355, "cKwImp": 0.14009, "energiaTotal": 1646.0, "inyectadaAcum": 1049.0, "pctIny": 0.048603, "neto": 1566.0, "sinSolar": 1646.0, "promDia": 52.2, "valorFactura": null}}, {"orden": 15, "mes": "sep", "consumoDolares": 49.18, "impuestos": 20.13, "lectura": 1092.0, "inyectadaMes": 80.0, "subsidio": 0, "legacy": {"totalSinSub": 69.31, "pctImp": 0.41, "kw": 495.0, "cKw": 0.099354, "cKwImp": 0.140088, "energiaTotal": 2221.0, "inyectadaAcum": 1129.0, "pctIny": 0.13913, "neto": 495.0, "sinSolar": 575.0, "promDia": 16.5, "valorFactura": null}}, {"orden": 16, "mes": "oct", "consumoDolares": 44.35, "impuestos": 18.56, "lectura": 1541.0, "inyectadaMes": 80.0, "subsidio": 0, "legacy": {"totalSinSub": 62.91, "pctImp": 0.42, "kw": 449.0, "cKw": 0.098775, "cKwImp": 0.140261, "energiaTotal": 2750.0, "inyectadaAcum": 1209.0, "pctIny": 0.151229, "neto": 449.0, "sinSolar": 529.0, "promDia": 14.966667, "valorFactura": null}}, {"orden": 17, "mes": "nov", "consumoDolares": 48.55, "impuestos": 19.93, "lectura": 2030.0, "inyectadaMes": 80.0, "subsidio": 0, "legacy": {"totalSinSub": 68.48, "pctImp": 0.41, "kw": 489.0, "cKw": 0.099284, "cKwImp": 0.139991, "energiaTotal": 3319.0, "inyectadaAcum": 1289.0, "pctIny": 0.140598, "neto": 489.0, "sinSolar": 569.0, "promDia": 16.3, "valorFactura": null}}, {"orden": 18, "mes": "dic", "consumoDolares": 61.25, "impuestos": 24.07, "lectura": 2640.0, "inyectadaMes": 80.0, "subsidio": 0, "legacy": {"totalSinSub": 85.32, "pctImp": 0.39, "kw": 610.0, "cKw": 0.10041, "cKwImp": 0.13957, "energiaTotal": 4009.0, "inyectadaAcum": 1369.0, "pctIny": 0.115942, "neto": 610.0, "sinSolar": 690.0, "promDia": 20.333333, "valorFactura": null}}, {"orden": 19, "mes": "Ene 2024", "consumoDolares": 74.47, "impuestos": 28.43, "lectura": 3374.0, "inyectadaMes": 80.0, "subsidio": 0, "legacy": {"totalSinSub": 102.9, "pctImp": 0.38, "kw": 734.0, "cKw": 0.101458, "cKwImp": 0.140012, "energiaTotal": 4823.0, "inyectadaAcum": 1449.0, "pctIny": 0.09828, "neto": 734.0, "sinSolar": 814.0, "promDia": 24.466667, "valorFactura": null}}, {"orden": 20, "mes": "FEB", "consumoDolares": 59.26, "impuestos": 22.61, "lectura": 3965.0, "inyectadaMes": 80.0, "subsidio": 0, "legacy": {"totalSinSub": 81.87, "pctImp": 0.38, "kw": 591.0, "cKw": 0.100271, "cKwImp": 0.138374, "energiaTotal": 5494.0, "inyectadaAcum": 1529.0, "pctIny": 0.119225, "neto": 591.0, "sinSolar": 671.0, "promDia": 19.7, "valorFactura": null}}, {"orden": 21, "mes": "MAR", "consumoDolares": 77.35, "impuestos": 29.14, "lectura": 4725.0, "inyectadaMes": 80.0, "subsidio": 0, "legacy": {"totalSinSub": 106.49, "pctImp": 0.38, "kw": 760.0, "cKw": 0.101776, "cKwImp": 0.140451, "energiaTotal": 6334.0, "inyectadaAcum": 1609.0, "pctIny": 0.095238, "neto": 760.0, "sinSolar": 840.0, "promDia": 25.333333, "valorFactura": null}}, {"orden": 22, "mes": "ABR", "consumoDolares": 72.47, "impuestos": 27.71, "lectura": 5441.0, "inyectadaMes": 80.0, "subsidio": 0, "legacy": {"totalSinSub": 100.18, "pctImp": 0.38, "kw": 716.0, "cKw": 0.101215, "cKwImp": 0.139677, "energiaTotal": 7130.0, "inyectadaAcum": 1689.0, "pctIny": 0.100503, "neto": 716.0, "sinSolar": 796.0, "promDia": 23.866667, "valorFactura": null}}, {"orden": 23, "mes": "may", "consumoDolares": 90.95, "impuestos": 31.64, "lectura": 6242.0, "inyectadaMes": 80.0, "subsidio": 45.03, "legacy": {"totalSinSub": 122.59, "pctImp": 0.35, "kw": 801.0, "cKw": 0.113546, "cKwImp": 0.153287, "energiaTotal": 8011.0, "inyectadaAcum": 1769.0, "pctIny": 0.090806, "neto": 801.0, "sinSolar": 881.0, "promDia": 26.7, "valorFactura": 77.56}}, {"orden": 24, "mes": "jun", "consumoDolares": 68.46, "impuestos": 25.07, "lectura": 6888.0, "inyectadaMes": 80.0, "subsidio": 34.23, "legacy": {"totalSinSub": 93.53, "pctImp": 0.37, "kw": 646.0, "cKw": 0.105975, "cKwImp": 0.145186, "energiaTotal": 8737.0, "inyectadaAcum": 1849.0, "pctIny": 0.110193, "neto": 646.0, "sinSolar": 726.0, "promDia": 21.533333, "valorFactura": 59.3}}, {"orden": 25, "mes": "jul", "consumoDolares": 47.71, "impuestos": 18.23, "lectura": 7369.0, "inyectadaMes": 80.0, "subsidio": 23.86, "legacy": {"totalSinSub": 65.94, "pctImp": 0.38, "kw": 481.0, "cKw": 0.099189, "cKwImp": 0.136881, "energiaTotal": 9298.0, "inyectadaAcum": 1929.0, "pctIny": 0.142602, "neto": 481.0, "sinSolar": 561.0, "promDia": 16.033333, "valorFactura": 42.08}}, {"orden": 26, "mes": "ago", "consumoDolares": 53.17, "impuestos": 20.48, "lectura": 7896.0, "inyectadaMes": 80.0, "subsidio": 26.59, "legacy": {"totalSinSub": 73.65, "pctImp": 0.39, "kw": 527.0, "cKw": 0.100892, "cKwImp": 0.14024, "energiaTotal": 9905.0, "inyectadaAcum": 2009.0, "pctIny": 0.131796, "neto": 527.0, "sinSolar": 607.0, "promDia": 17.566667, "valorFactura": 47.06}}, {"orden": 27, "mes": "sep", "consumoDolares": 60.37, "impuestos": 22.9, "lectura": 8479.0, "inyectadaMes": 80.0, "subsidio": 30.9, "legacy": {"totalSinSub": 83.27, "pctImp": 0.38, "kw": 583.0, "cKw": 0.103551, "cKwImp": 0.1429, "energiaTotal": 10568.0, "inyectadaAcum": 2089.0, "pctIny": 0.120664, "neto": 583.0, "sinSolar": 663.0, "promDia": 19.433333, "valorFactura": 52.37}}, {"orden": 28, "mes": "oct", "consumoDolares": 81.2, "impuestos": 29.06, "lectura": 9219.0, "inyectadaMes": 80.0, "subsidio": 40.6, "legacy": {"totalSinSub": 110.26, "pctImp": 0.36, "kw": 740.0, "cKw": 0.10973, "cKwImp": 0.149232, "energiaTotal": 11388.0, "inyectadaAcum": 2169.0, "pctIny": 0.097561, "neto": 740.0, "sinSolar": 820.0, "promDia": 24.666667, "valorFactura": 69.66}}, {"orden": 29, "mes": "nov", "consumoDolares": 74.25, "impuestos": 18.68, "lectura": 9951.0, "inyectadaMes": 80.0, "subsidio": 28.31, "legacy": {"totalSinSub": 92.93, "pctImp": 0.25, "kw": 732.0, "cKw": 0.101434, "cKwImp": 0.126793, "energiaTotal": 12200.0, "inyectadaAcum": 2249.0, "pctIny": 0.098522, "neto": 732.0, "sinSolar": 812.0, "promDia": 24.4, "valorFactura": 64.62}}, {"orden": 30, "mes": "dic", "consumoDolares": 97.43, "impuestos": 36.8, "lectura": 10892.0, "inyectadaMes": 80.0, "subsidio": 48.72, "legacy": {"totalSinSub": 134.23, "pctImp": 0.38, "kw": 941.0, "cKw": 0.103539, "cKwImp": 0.142884, "energiaTotal": 13221.0, "inyectadaAcum": 2329.0, "pctIny": 0.078355, "neto": 941.0, "sinSolar": 1021.0, "promDia": 31.366667, "valorFactura": 85.51}}, {"orden": 31, "mes": "Ene 2025", "consumoDolares": 79.79, "impuestos": 29.83, "lectura": 11674.0, "inyectadaMes": 101.0, "subsidio": 40.61, "legacy": {"totalSinSub": 109.62, "pctImp": 0.37, "kw": 782.0, "cKw": 0.102033, "cKwImp": 0.139786, "energiaTotal": 14083.0, "inyectadaAcum": 2409.0, "pctIny": 0.117169, "neto": 761.0, "sinSolar": 862.0, "promDia": 25.366667, "valorFactura": 69.01}}, {"orden": 32, "mes": "Feb 2025", "consumoDolares": 62.72, "impuestos": 23.71, "lectura": 12298.0, "inyectadaMes": 126.0, "subsidio": 31.36, "legacy": {"totalSinSub": 86.43, "pctImp": 0.38, "kw": 624.0, "cKw": 0.100513, "cKwImp": 0.138708, "energiaTotal": 14808.0, "inyectadaAcum": 2510.0, "pctIny": 0.173793, "neto": 599.0, "sinSolar": 725.0, "promDia": 19.966667, "valorFactura": 55.07}}, {"orden": 33, "mes": "Mar 2025", "consumoDolares": 72.03, "impuestos": 26.92, "lectura": 13010.0, "inyectadaMes": 158.0, "subsidio": 36.02, "legacy": {"totalSinSub": 98.95, "pctImp": 0.37, "kw": 712.0, "cKw": 0.101166, "cKwImp": 0.138597, "energiaTotal": 15646.0, "inyectadaAcum": 2636.0, "pctIny": 0.188544, "neto": 680.0, "sinSolar": 838.0, "promDia": 22.666667, "valorFactura": 62.93}}, {"orden": 34, "mes": "Abr 2025", "consumoDolares": 65.03, "impuestos": 24.26, "lectura": 13656.0, "inyectadaMes": 124.0, "subsidio": 32.52, "legacy": {"totalSinSub": 89.29, "pctImp": 0.37, "kw": 646.0, "cKw": 0.100666, "cKwImp": 0.137912, "energiaTotal": 16450.0, "inyectadaAcum": 2794.0, "pctIny": 0.154229, "neto": 680.0, "sinSolar": 804.0, "promDia": 22.666667, "valorFactura": 56.77}}, {"orden": 35, "mes": "May 2025", "consumoDolares": 66.79, "impuestos": 24.72, "lectura": 14289.0, "inyectadaMes": 98.0, "subsidio": 33.4, "legacy": {"totalSinSub": 91.51, "pctImp": 0.37, "kw": 633.0, "cKw": 0.105513, "cKwImp": 0.144553, "energiaTotal": 17207.0, "inyectadaAcum": 2918.0, "pctIny": 0.129458, "neto": 659.0, "sinSolar": 757.0, "promDia": 21.966667, "valorFactura": 58.11}}, {"orden": 36, "mes": "Jun 2025", "consumoDolares": 59.98, "impuestos": 22.15, "lectura": 14869.0, "inyectadaMes": 87.0, "subsidio": 29.99, "legacy": {"totalSinSub": 82.13, "pctImp": 0.37, "kw": 580.0, "cKw": 0.103414, "cKwImp": 0.141677, "energiaTotal": 17885.0, "inyectadaAcum": 3016.0, "pctIny": 0.128319, "neto": 591.0, "sinSolar": 678.0, "promDia": 19.7, "valorFactura": 52.14}}, {"orden": 37, "mes": "Jul 2025", "consumoDolares": 52.27, "impuestos": 20.31, "lectura": 15389.0, "inyectadaMes": 111.0, "subsidio": 26.14, "legacy": {"totalSinSub": 72.58, "pctImp": 0.39, "kw": 520.0, "cKw": 0.100519, "cKwImp": 0.139722, "energiaTotal": 18492.0, "inyectadaAcum": 3103.0, "pctIny": 0.182867, "neto": 496.0, "sinSolar": 607.0, "promDia": 16.533333, "valorFactura": 46.44}}, {"orden": 38, "mes": "Ago 2025", "consumoDolares": 56.25, "impuestos": 21.26, "lectura": 15940.0, "inyectadaMes": 94.0, "subsidio": 28.13, "legacy": {"totalSinSub": 77.51, "pctImp": 0.38, "kw": 551.0, "cKw": 0.102087, "cKwImp": 0.14088, "energiaTotal": 19154.0, "inyectadaAcum": 3214.0, "pctIny": 0.141994, "neto": 568.0, "sinSolar": 662.0, "promDia": 18.933333, "valorFactura": 49.38}}, {"orden": 39, "mes": "Sep 2025", "consumoDolares": 64.86, "impuestos": 24.26, "lectura": 16558.0, "inyectadaMes": 101.0, "subsidio": 32.43, "legacy": {"totalSinSub": 89.12, "pctImp": 0.37, "kw": 618.0, "cKw": 0.104951, "cKwImp": 0.143783, "energiaTotal": 19866.0, "inyectadaAcum": 3308.0, "pctIny": 0.141854, "neto": 611.0, "sinSolar": 712.0, "promDia": 20.366667, "valorFactura": 56.69}}, {"orden": 40, "mes": "Oct 2025", "consumoDolares": 71.03, "impuestos": 25.73, "lectura": 17224.0, "inyectadaMes": 123.0, "subsidio": 35.52, "legacy": {"totalSinSub": 96.76, "pctImp": 0.36, "kw": 666.0, "cKw": 0.106652, "cKwImp": 0.145046, "energiaTotal": 20633.0, "inyectadaAcum": 3409.0, "pctIny": 0.160365, "neto": 644.0, "sinSolar": 767.0, "promDia": 21.466667, "valorFactura": 61.24}}, {"orden": 41, "mes": "Nov 2025", "consumoDolares": 73.53, "impuestos": 21.5, "lectura": 17854.0, "inyectadaMes": 92.0, "subsidio": 31.68, "legacy": {"totalSinSub": 95.03, "pctImp": 0.29, "kw": 630.0, "cKw": 0.116714, "cKwImp": 0.150561, "energiaTotal": 21386.0, "inyectadaAcum": 3532.0, "pctIny": 0.122178, "neto": 661.0, "sinSolar": 753.0, "promDia": 22.033333, "valorFactura": 63.35}}, {"orden": 42, "mes": "Dic 2025", "consumoDolares": 83.79, "impuestos": 24.5, "lectura": 18672.0, "inyectadaMes": 109.0, "subsidio": 42.61, "legacy": {"totalSinSub": 108.29, "pctImp": 0.29, "kw": 818.0, "cKw": 0.102433, "cKwImp": 0.132138, "energiaTotal": 22296.0, "inyectadaAcum": 3624.0, "pctIny": 0.11978, "neto": 801.0, "sinSolar": 910.0, "promDia": 26.7, "valorFactura": 65.68}}, {"orden": 43, "mes": "Ene 2026", "consumoDolares": 105.19, "impuestos": 14.99, "lectura": 19362.0, "inyectadaMes": 80.0, "subsidio": 35.54, "legacy": {"totalSinSub": 90.2, "pctImp": 0.14, "kw": 690.0, "cKw": 0.152449, "cKwImp": 0.173792, "energiaTotal": 23095.0, "inyectadaAcum": 3733.0, "pctIny": 0.100125, "neto": 719.0, "sinSolar": 799.0, "promDia": 23.966667, "valorFactura": 54.66}}, {"orden": 44, "mes": "Feb 2026", "consumoDolares": 108.59, "impuestos": 15.53, "lectura": 20073.0, "inyectadaMes": 102.0, "subsidio": 36.67, "legacy": {"totalSinSub": 93.06, "pctImp": 0.14, "kw": 711.0, "cKw": 0.152729, "cKwImp": 0.174111, "energiaTotal": 23886.0, "inyectadaAcum": 3813.0, "pctIny": 0.128951, "neto": 689.0, "sinSolar": 791.0, "promDia": 22.966667, "valorFactura": 56.39}}, {"orden": 45, "mes": "Mar 2026", "consumoDolares": 159.23, "impuestos": 22.94, "lectura": 21083.0, "inyectadaMes": 150.0, "subsidio": 53.55, "legacy": {"totalSinSub": 136.29, "pctImp": 0.14, "kw": 1010.0, "cKw": 0.157653, "cKwImp": 0.179725, "energiaTotal": 25046.0, "inyectadaAcum": 3963.0, "pctIny": 0.12931, "neto": 1010.0, "sinSolar": 1160.0, "promDia": 33.666667, "valorFactura": 82.74}}, {"orden": 46, "mes": "Abr 2026", "consumoDolares": 126.73, "impuestos": 20.57, "lectura": 21903.0, "inyectadaMes": 123.0, "subsidio": 42.72, "legacy": {"totalSinSub": 106.16, "pctImp": 0.16, "kw": 820.0, "cKw": 0.154549, "cKwImp": 0.179277, "energiaTotal": 25989.0, "inyectadaAcum": 4086.0, "pctIny": 0.130435, "neto": 820.0, "sinSolar": 943.0, "promDia": 27.333333, "valorFactura": 63.44}}];
-let datos = [];
-let editIdx = null;
-let backupEdit = null;
-let resumenKeySeleccionado = null;
+const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+const DATOS_INICIALES = [{"id": "hist_1", "year": 2022, "month": 7, "consumoDolares": 87.87, "impuestos": 32.82, "lectura": 5554.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_2", "year": 2022, "month": 8, "consumoDolares": 139.07, "impuestos": 49.92, "lectura": 6372.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_3", "year": 2022, "month": 9, "consumoDolares": 146.93, "impuestos": 52.55, "lectura": 7536.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_4", "year": 2022, "month": 10, "consumoDolares": 73.99, "impuestos": 28.21, "lectura": 8225.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_5", "year": 2022, "month": 11, "consumoDolares": 62.29, "impuestos": 24.34, "lectura": 8823.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_6", "year": 2022, "month": 12, "consumoDolares": 87.52, "impuestos": 32.63, "lectura": 9639.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_7", "year": 2023, "month": 1, "consumoDolares": 94.21, "impuestos": 36.65, "lectura": 10551.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_8", "year": 2023, "month": 2, "consumoDolares": 89.55, "impuestos": 34.78, "lectura": 11421.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_9", "year": 2023, "month": 3, "consumoDolares": 82.9, "impuestos": 32.08, "lectura": 12231.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_10", "year": 2023, "month": 4, "consumoDolares": 95.54, "impuestos": 37.19, "lectura": 13155.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_11", "year": 2023, "month": 5, "consumoDolares": 73.81, "impuestos": 28.4, "lectura": 13883.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_12", "year": 2023, "month": 6, "consumoDolares": 101.36, "impuestos": 38.96, "lectura": 14762.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_13", "year": 2023, "month": 7, "consumoDolares": 97.3, "impuestos": 37.36, "lectura": 101.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_14", "year": 2023, "month": 8, "consumoDolares": 49.28, "impuestos": 20.16, "lectura": 597.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_15", "year": 2023, "month": 9, "consumoDolares": 49.18, "impuestos": 20.13, "lectura": 1092.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_16", "year": 2023, "month": 10, "consumoDolares": 44.35, "impuestos": 18.56, "lectura": 1541.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_17", "year": 2023, "month": 11, "consumoDolares": 48.55, "impuestos": 19.93, "lectura": 2030.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_18", "year": 2023, "month": 12, "consumoDolares": 61.25, "impuestos": 24.07, "lectura": 2640.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_19", "year": 2024, "month": 1, "consumoDolares": 74.47, "impuestos": 28.43, "lectura": 3374.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_20", "year": 2024, "month": 2, "consumoDolares": 59.26, "impuestos": 22.61, "lectura": 3965.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_21", "year": 2024, "month": 3, "consumoDolares": 77.35, "impuestos": 29.14, "lectura": 4725.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_22", "year": 2024, "month": 4, "consumoDolares": 72.47, "impuestos": 27.71, "lectura": 5441.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_23", "year": 2024, "month": 5, "consumoDolares": 90.95, "impuestos": 31.64, "lectura": 6242.0, "inyectadaMes": 80.0, "subsidio": 45.03}, {"id": "hist_24", "year": 2024, "month": 6, "consumoDolares": 68.46, "impuestos": 25.07, "lectura": 6888.0, "inyectadaMes": 80.0, "subsidio": 34.23}, {"id": "hist_25", "year": 2024, "month": 7, "consumoDolares": 47.71, "impuestos": 18.23, "lectura": 7369.0, "inyectadaMes": 80.0, "subsidio": 23.86}, {"id": "hist_26", "year": 2024, "month": 8, "consumoDolares": 53.17, "impuestos": 20.48, "lectura": 7896.0, "inyectadaMes": 80.0, "subsidio": 26.59}, {"id": "hist_27", "year": 2024, "month": 9, "consumoDolares": 60.37, "impuestos": 22.9, "lectura": 8479.0, "inyectadaMes": 80.0, "subsidio": 30.9}, {"id": "hist_28", "year": 2024, "month": 10, "consumoDolares": 81.2, "impuestos": 29.06, "lectura": 9219.0, "inyectadaMes": 80.0, "subsidio": 40.6}, {"id": "hist_29", "year": 2024, "month": 11, "consumoDolares": 74.25, "impuestos": 18.68, "lectura": 9951.0, "inyectadaMes": 80.0, "subsidio": 28.31}, {"id": "hist_30", "year": 2024, "month": 12, "consumoDolares": 97.43, "impuestos": 36.8, "lectura": 10892.0, "inyectadaMes": 80.0, "subsidio": 48.72}, {"id": "hist_31", "year": 2025, "month": 1, "consumoDolares": 79.79, "impuestos": 29.83, "lectura": 11674.0, "inyectadaMes": 101.0, "subsidio": 40.61}, {"id": "hist_32", "year": 2025, "month": 2, "consumoDolares": 62.72, "impuestos": 23.71, "lectura": 12298.0, "inyectadaMes": 126.0, "subsidio": 31.36}, {"id": "hist_33", "year": 2025, "month": 3, "consumoDolares": 72.03, "impuestos": 26.92, "lectura": 13010.0, "inyectadaMes": 158.0, "subsidio": 36.02}, {"id": "hist_34", "year": 2025, "month": 4, "consumoDolares": 65.03, "impuestos": 24.26, "lectura": 13656.0, "inyectadaMes": 124.0, "subsidio": 32.52}, {"id": "hist_35", "year": 2025, "month": 5, "consumoDolares": 66.79, "impuestos": 24.72, "lectura": 14289.0, "inyectadaMes": 98.0, "subsidio": 33.4}, {"id": "hist_36", "year": 2025, "month": 6, "consumoDolares": 59.98, "impuestos": 22.15, "lectura": 14869.0, "inyectadaMes": 87.0, "subsidio": 29.99}, {"id": "hist_37", "year": 2025, "month": 7, "consumoDolares": 52.27, "impuestos": 20.31, "lectura": 15389.0, "inyectadaMes": 111.0, "subsidio": 26.14}, {"id": "hist_38", "year": 2025, "month": 8, "consumoDolares": 56.25, "impuestos": 21.26, "lectura": 15940.0, "inyectadaMes": 94.0, "subsidio": 28.13}, {"id": "hist_39", "year": 2025, "month": 9, "consumoDolares": 64.86, "impuestos": 24.26, "lectura": 16558.0, "inyectadaMes": 101.0, "subsidio": 32.43}, {"id": "hist_40", "year": 2025, "month": 10, "consumoDolares": 71.03, "impuestos": 25.73, "lectura": 17224.0, "inyectadaMes": 123.0, "subsidio": 35.52}, {"id": "hist_41", "year": 2025, "month": 11, "consumoDolares": 73.53, "impuestos": 21.5, "lectura": 17854.0, "inyectadaMes": 92.0, "subsidio": 31.68}, {"id": "hist_42", "year": 2025, "month": 12, "consumoDolares": 83.79, "impuestos": 24.5, "lectura": 18672.0, "inyectadaMes": 109.0, "subsidio": 42.61}, {"id": "hist_43", "year": 2026, "month": 1, "consumoDolares": 105.19, "impuestos": 14.99, "lectura": 19362.0, "inyectadaMes": 80.0, "subsidio": 35.54}, {"id": "hist_44", "year": 2026, "month": 2, "consumoDolares": 108.59, "impuestos": 15.53, "lectura": 20073.0, "inyectadaMes": 102.0, "subsidio": 36.67}, {"id": "hist_45", "year": 2026, "month": 3, "consumoDolares": 159.23, "impuestos": 22.94, "lectura": 21083.0, "inyectadaMes": 150.0, "subsidio": 53.55}, {"id": "hist_46", "year": 2026, "month": 4, "consumoDolares": 126.73, "impuestos": 20.57, "lectura": 21903.0, "inyectadaMes": 123.0, "subsidio": 42.72}];
 const STORAGE_KEY = 'energiaPacificaDatosV6';
-const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const mesesCorto = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-const mesMap = {ene:1,enero:1,feb:2,febrero:2,mar:3,marzo:3,abr:4,abril:4,may:5,mayo:5,jun:6,junio:6,jul:7,julio:7,ago:8,agosto:8,sep:9,sept:9,septiembre:9,oct:10,octubre:10,nov:11,noviembre:11,dic:12,diciembre:12};
+let datos = [];
+let editId = null;
 
-function initSelects(){
-  const m=document.getElementById('mesSelect'); m.innerHTML=meses.map((x,i)=>`<option value="${i+1}">${x}</option>`).join('');
-  const a=document.getElementById('anioSelect'); const y=new Date().getFullYear(); let out=''; for(let yy=y+1;yy>=2022;yy--) out+=`<option value="${yy}" ${yy===y?'selected':''}>${yy}</option>`; a.innerHTML=out;
+function llenarSelects() {
+  const monthSel = document.getElementById('month');
+  monthSel.innerHTML = MESES.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+  const yearSel = document.getElementById('year');
+  const yActual = new Date().getFullYear();
+  let years = [];
+  for(let y=2022; y<=Math.max(2032, yActual+3); y++) years.push(y);
+  yearSel.innerHTML = years.map(y=>`<option value="${y}">${y}</option>`).join('');
+  const hoy = new Date();
+  monthSel.value = hoy.getMonth()+1;
+  yearSel.value = hoy.getFullYear();
 }
-function mesTexto(m,a){ return meses[Number(m)-1]+' '+a; }
-function normTxt(t){ return String(t||'').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\./g,''); }
-function parsePeriodo(txt, orden){
-  const raw=String(txt||'').trim(); const n=normTxt(raw); const parts=n.split(/\s+|\-|\//).filter(Boolean);
-  let mesNum=0, anio=0;
-  for(const p of parts){ if(mesMap[p]) mesNum=mesMap[p]; if(/^20\d{2}$/.test(p)) anio=Number(p); }
-  if(!mesNum && mesMap[n]) mesNum=mesMap[n];
-  if(!anio) anio = inferirAnioPorOrden(Number(orden)||0, mesNum);
-  return {mesNum:mesNum||1, anio:anio||2024};
+
+function periodoTexto(r) { return MESES[Number(r.month)-1] + ' ' + r.year; }
+function periodoKey(r) { return Number(r.year)*100 + Number(r.month); }
+function ordenarCronologico(arr) { return arr.slice().sort((a,b)=>periodoKey(a)-periodoKey(b)); }
+function ordenarReciente(arr) { return arr.slice().sort((a,b)=>periodoKey(b)-periodoKey(a)); }
+
+function evaluarSuma(valor) {
+  const texto = String(valor ?? '').trim();
+  if(!texto) return 0;
+  if(!/^[0-9.,+\s-]+$/.test(texto)) return NaN;
+  return texto.split('+').reduce((total, parte) => {
+    const limpio = parte.trim().replace(',', '.');
+    if(limpio === '') return total;
+    const n = Number(limpio);
+    if(!isFinite(n)) throw new Error('Número inválido');
+    return total + n;
+  }, 0);
 }
-function inferirAnioPorOrden(orden, mesNum){
-  // Para meses antiguos sin año explícito, conserva el orden histórico del Excel de forma aproximada.
-  if(orden>=14 && orden<=18) return 2023;
-  if(orden>=19 && orden<=30) return 2024;
-  if(orden>=31) return 2025;
-  return 2023;
+function normalizarCampoSuma(id){
+  const campo = document.getElementById(id);
+  try {
+    const total = evaluarSuma(campo.value);
+    if(isNaN(total)) throw new Error('Valor inválido');
+    campo.value = total ? total.toFixed(2) : '';
+    return true;
+  } catch(e) {
+    alert('En ' + (id === 'impuestos' ? 'Impuestos' : 'Subsidio') + ' solo ingresa números sumados con +. Ejemplo: 12.50+3.40');
+    campo.focus();
+    return false;
+  }
 }
-function periodoKey(d){ const p=parsePeriodo(d.mes,d.orden); return p.anio*100+p.mesNum; }
-function filaKey(r){ return `${periodoKey(r)}_${r.orden}`; }
-function ordenarDatos(){ datos.sort((a,b)=>periodoKey(a)-periodoKey(b) || Number(a.orden)-Number(b.orden)); }
-function cargarDatos(){ const guardado=localStorage.getItem(STORAGE_KEY); datos=guardado?JSON.parse(guardado):JSON.parse(JSON.stringify(datosIniciales)); recalcularYRenderizar(); }
-function guardar(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(datos)); }
-function evaluarSuma(valor){ const s=String(valor||'').trim().replace(/,/g,'.'); if(!s) return 0; if(!/^[0-9.+\-\s]+$/.test(s)) throw new Error('Formato no válido'); return s.split('+').map(x=>parseFloat(x.trim())||0).reduce((a,b)=>a+b,0); }
-function normalizarValorSuma(valor){ return evaluarSuma(valor); }
-function normalizarCampoSuma(id){ const c=document.getElementById(id); try{ const total=evaluarSuma(c.value); c.value=total?total.toFixed(2):''; return true; }catch(e){ alert('Solo números sumados con +. Ejemplo: 12.50+3.40'); c.focus(); return false; } }
-function activarSumasConEnter(){ ['impuestos','subsidio'].forEach(id=>{ const c=document.getElementById(id); if(!c)return; c.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); normalizarCampoSuma(id); } }); }); }
-function num(v){ try{const n=evaluarSuma(v); return isNaN(n)?0:n;}catch(e){const n=parseFloat(String(v||'').replace(',','.')); return isNaN(n)?0:n;} }
-function div(a,b){ return Math.abs(b)<0.000001?0:a/b; }
+function activarSumasConEnter(){
+  ['impuestos','subsidio'].forEach(id => {
+    const campo = document.getElementById(id);
+    campo.addEventListener('keydown', function(e){
+      if(e.key === 'Enter') {
+        e.preventDefault();
+        normalizarCampoSuma(id);
+      }
+    });
+    campo.addEventListener('blur', function(){
+      if(campo.value.includes('+')) normalizarCampoSuma(id);
+    });
+  });
+}
+function num(v){
+  try {
+    const n = evaluarSuma(v);
+    return isNaN(n) ? 0 : n;
+  } catch(e) {
+    const n = parseFloat(String(v || '').replace(',', '.'));
+    return isNaN(n) ? 0 : n;
+  }
+}
+function div(a,b){ return Math.abs(Number(b)||0) < 0.000001 ? 0 : Number(a||0)/Number(b||0); }
 function money(v){ return Number(v||0).toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function qty(v){ return Number(v||0).toLocaleString('es-EC',{minimumFractionDigits:0,maximumFractionDigits:0}); }
 function dec(v){ return Number(v||0).toLocaleString('es-EC',{minimumFractionDigits:4,maximumFractionDigits:4}); }
 function pct(v){ return (Number(v||0)*100).toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2})+'%'; }
-function mostrarMes(d){ const p=parsePeriodo(d.mes,d.orden); return meses[p.mesNum-1]+' '+p.anio; }
 
 function calcular(){
-  ordenarDatos(); let acumInyectada=0;
-  return datos.map((d,i)=>{
-    const prev=i>0?datos[i-1]:null;
-    const consumoDolares=num(d.consumoDolares), impuestos=num(d.impuestos), lectura=num(d.lectura), inyectadaMes=num(d.inyectadaMes), subsidio=num(d.subsidio);
-    const lecturaAnterior=prev?num(prev.lectura):0;
-    const consumoMes=prev?lectura-lecturaAnterior:(d.legacy&&d.legacy.neto?num(d.legacy.neto):0);
-    acumInyectada+=inyectadaMes;
-    const totalSinSubsidio=consumoDolares+impuestos;
-    const valorFactura=totalSinSubsidio-subsidio;
-    const consumoSinSolar=consumoMes+inyectadaMes;
-    return {...d, idx:i, key:filaKey(d), mesVisible:mostrarMes(d), lecturaAnterior, consumoMes, totalSinSubsidio, pctImpuestos:div(impuestos,consumoDolares), costoKw:div(consumoDolares,consumoMes), costoKwConImpuestos:div(totalSinSubsidio,consumoMes), energiaTotal:lectura+acumInyectada, inyectadaAcum:acumInyectada, pctInyectada:div(inyectadaMes,consumoSinSolar), netoConsumo:consumoMes, consumoSinSolar, promDia:div(consumoMes,30), subsidio, valorFactura, facturaKw:div(valorFactura,consumoMes)};
+  const base = ordenarCronologico(datos);
+  let acumInyectada = 0;
+  return base.map((d, i) => {
+    const prev = i > 0 ? base[i-1] : null;
+    const consumoDolares = num(d.consumoDolares);
+    const impuestos = num(d.impuestos);
+    const lectura = num(d.lectura);
+    const inyectadaMes = num(d.inyectadaMes);
+    const subsidio = num(d.subsidio);
+    const lecturaAnterior = prev ? num(prev.lectura) : 0;
+    const consumoMes = prev ? lectura - lecturaAnterior : 0;
+    acumInyectada += inyectadaMes;
+    const totalSinSubsidio = consumoDolares + impuestos;
+    const valorFactura = totalSinSubsidio - subsidio;
+    const consumoSinSolar = consumoMes + inyectadaMes;
+    return {
+      ...d,
+      periodo: periodoTexto(d),
+      lecturaAnterior,
+      consumoMes,
+      totalSinSubsidio,
+      pctImpuestos: div(impuestos, consumoDolares),
+      costoKw: div(consumoDolares, consumoMes),
+      costoKwConImpuestos: div(totalSinSubsidio, consumoMes),
+      energiaTotal: lectura + acumInyectada,
+      inyectadaAcum: acumInyectada,
+      pctInyectada: div(inyectadaMes, consumoSinSolar),
+      netoConsumo: consumoMes,
+      consumoSinSolar,
+      promDia: div(consumoMes, 30),
+      subsidio,
+      valorFactura,
+      facturaKw: div(valorFactura, consumoMes)
+    };
   });
 }
-function recalcularYRenderizar(){ const calc=calcular(); renderTabla(calc.slice().reverse()); actualizarOpcionesResumen(calc); actualizarResumenSeleccionado(calc); guardar(); }
-function actualizarOpcionesResumen(calc){
-  const sel=document.getElementById('resumenSelect'); if(!sel) return;
-  const anterior=resumenKeySeleccionado || sel.value;
-  const rows=calc.slice().reverse();
-  sel.innerHTML=rows.map(r=>`<option value="${r.key}">${r.mesVisible}</option>`).join('');
-  const existe=rows.some(r=>r.key===anterior);
-  sel.value=existe?anterior:(rows[0]?.key||''); resumenKeySeleccionado=sel.value;
+
+function cargarDatos(){
+  try {
+    const guardado = localStorage.getItem(STORAGE_KEY);
+    datos = guardado ? JSON.parse(guardado) : JSON.parse(JSON.stringify(DATOS_INICIALES));
+    if(!Array.isArray(datos) || datos.length===0) datos = JSON.parse(JSON.stringify(DATOS_INICIALES));
+  } catch(e) {
+    datos = JSON.parse(JSON.stringify(DATOS_INICIALES));
+  }
+  recalcularYRenderizar(false);
 }
-function actualizarResumenSeleccionado(calcParam){
-  const calc=calcParam||calcular(); const sel=document.getElementById('resumenSelect'); resumenKeySeleccionado=sel?sel.value:resumenKeySeleccionado;
-  const r=calc.find(x=>x.key===resumenKeySeleccionado) || calc[calc.length-1]; renderKpis(r);
+function guardarLocal(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(datos));
 }
-function renderKpis(u){ if(!u)return; document.getElementById('kpiMes').textContent=u.mesVisible||'-'; document.getElementById('kpiConsumo').textContent=qty(u.consumoMes); document.getElementById('kpiCosto').textContent='$ '+dec(u.costoKwConImpuestos); document.getElementById('kpiIny').textContent=pct(u.pctInyectada); document.getElementById('kpiFactura').textContent='$ '+money(u.valorFactura); }
-function monthOptions(sel){ return meses.map((x,i)=>`<option value="${i+1}" ${Number(sel)===i+1?'selected':''}>${x}</option>`).join(''); }
-function yearOptions(sel){ const actual=new Date().getFullYear()+1; let out=''; for(let a=actual;a>=2022;a--) out+=`<option value="${a}" ${Number(sel)===a?'selected':''}>${a}</option>`; return out; }
+
+function poblarResumen(calc){
+  const sel = document.getElementById('resumenSelect');
+  const actual = sel.value;
+  const recientes = ordenarReciente(calc);
+  sel.innerHTML = recientes.map(r => `<option value="${r.id}">${r.periodo}</option>`).join('');
+  if(actual && recientes.some(r=>r.id===actual)) sel.value = actual;
+  else if(recientes[0]) sel.value = recientes[0].id;
+}
+
+function renderResumenSeleccionado(){
+  const id = document.getElementById('resumenSelect').value;
+  const r = calcular().find(x=>x.id===id) || calcular().slice(-1)[0];
+  if(!r) return;
+  document.getElementById('kpiConsumo').textContent = qty(r.consumoMes);
+  document.getElementById('kpiCosto').textContent = '$ ' + dec(r.costoKwConImpuestos);
+  document.getElementById('kpiIny').textContent = pct(r.pctInyectada);
+  document.getElementById('kpiFactura').textContent = '$ ' + money(r.valorFactura);
+  document.getElementById('kpiSinSolar').textContent = qty(r.consumoSinSolar);
+}
 
 function renderTabla(rows){
- const headers=['Mes','Consumo $','Impuestos $','Total sin subsidio $','% impuestos','Lectura anterior','Lectura actual','Consumo mes kWh','$/kWh consumo','$/kWh con impuestos','Energía total','Inyectada acum.','Inyectada mes','% inyectada','Neto consumo','Consumo sin solar','Prom. día','Subsidio $','Valor factura $','Factura $/kWh','Acción'];
- let html='<thead><tr>'+headers.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>';
- rows.forEach(r=>{ const idx=r.idx; const neg=r.consumoMes<0?' neg':''; const p=parsePeriodo(datos[idx].mes,datos[idx].orden);
- if(editIdx===idx){ html+=`<tr>
- <td class="inputcol"><div class="month-pair"><select id="e_mes_${idx}" class="editInput editMonth">${monthOptions(p.mesNum)}</select><select id="e_anio_${idx}" class="editInput editYear">${yearOptions(p.anio)}</select></div></td>
- <td class="inputcol"><input class="editInput" id="e_consumo_${idx}" type="number" step="0.01" value="${datos[idx].consumoDolares??''}"></td>
- <td class="inputcol"><input class="editInput" id="e_impuestos_${idx}" type="text" inputmode="text" value="${datos[idx].impuestos??''}"></td>
- <td class="calc">$ ${money(r.totalSinSubsidio)}</td><td class="calc">${pct(r.pctImpuestos)}</td><td class="calc">${qty(r.lecturaAnterior)}</td>
- <td class="inputcol"><input class="editInput" id="e_lectura_${idx}" type="number" step="1" value="${datos[idx].lectura??''}"></td>
- <td class="calc${neg}">${qty(r.consumoMes)}</td><td class="calc">$ ${dec(r.costoKw)}</td><td class="calc">$ ${dec(r.costoKwConImpuestos)}</td><td class="calc">${qty(r.energiaTotal)}</td><td class="calc">${qty(r.inyectadaAcum)}</td>
- <td class="inputcol"><input class="editInput" id="e_inyectada_${idx}" type="number" step="1" value="${datos[idx].inyectadaMes??''}"></td>
- <td class="calc">${pct(r.pctInyectada)}</td><td class="calc">${qty(r.netoConsumo)}</td><td class="calc ok">${qty(r.consumoSinSolar)}</td><td class="calc">${dec(r.promDia)}</td>
- <td class="inputcol"><input class="editInput" id="e_subsidio_${idx}" type="text" inputmode="text" value="${datos[idx].subsidio??''}"></td>
- <td class="calc">$ ${money(r.valorFactura)}</td><td class="calc">$ ${dec(r.facturaKw)}</td>
- <td><div class="row-actions"><button class="good" onclick="guardarEdicion(${idx})">Guardar</button><button class="sec" onclick="cancelarEdicion()">Cancelar</button></div></td></tr>`; } else { html+=`<tr>
- <td>${r.mesVisible}</td><td class="inputcol">$ ${money(r.consumoDolares)}</td><td class="inputcol">$ ${money(r.impuestos)}</td><td class="calc">$ ${money(r.totalSinSubsidio)}</td><td class="calc">${pct(r.pctImpuestos)}</td><td class="calc">${qty(r.lecturaAnterior)}</td><td class="inputcol">${qty(r.lectura)}</td><td class="calc${neg}">${qty(r.consumoMes)}</td><td class="calc">$ ${dec(r.costoKw)}</td><td class="calc">$ ${dec(r.costoKwConImpuestos)}</td><td class="calc">${qty(r.energiaTotal)}</td><td class="calc">${qty(r.inyectadaAcum)}</td><td class="inputcol">${qty(r.inyectadaMes)}</td><td class="calc">${pct(r.pctInyectada)}</td><td class="calc">${qty(r.netoConsumo)}</td><td class="calc ok">${qty(r.consumoSinSolar)}</td><td class="calc">${dec(r.promDia)}</td><td class="inputcol">$ ${money(r.subsidio)}</td><td class="calc">$ ${money(r.valorFactura)}</td><td class="calc">$ ${dec(r.facturaKw)}</td><td><div class="row-actions"><button class="warn" onclick="editarFila(${idx})">Editar</button><button class="danger" onclick="eliminarFila(${idx})">Eliminar</button></div></td></tr>`; } });
- html+='</tbody>'; document.getElementById('tabla').innerHTML=html;
+  const headers = [
+    'Mes','Consumo $','Impuestos $','Total sin subsidio $','% impuestos',
+    'Lectura anterior','Lectura actual','Consumo mes kWh',
+    '$/kWh consumo','$/kWh con impuestos','Energía total',
+    'Inyectada acum.','Inyectada mes','% inyectada',
+    'Neto consumo','Consumo sin solar','Prom. día',
+    'Subsidio $','Valor factura $','Factura $/kWh','Acción'
+  ];
+  let html = '<thead><tr>' + headers.map(h=>'<th>'+h+'</th>').join('') + '</tr></thead><tbody>';
+  rows.forEach(r => {
+    const neg = r.consumoMes < 0 ? ' neg' : '';
+    const editingClass = r.id === editId ? ' class="editing"' : '';
+    html += `<tr${editingClass}>
+      <td>${r.periodo}</td>
+      <td class="inputcol">$ ${money(r.consumoDolares)}</td>
+      <td class="inputcol">$ ${money(r.impuestos)}</td>
+      <td class="calc">$ ${money(r.totalSinSubsidio)}</td>
+      <td class="calc">${pct(r.pctImpuestos)}</td>
+      <td class="calc">${qty(r.lecturaAnterior)}</td>
+      <td class="inputcol">${qty(r.lectura)}</td>
+      <td class="calc${neg}">${qty(r.consumoMes)}</td>
+      <td class="calc">$ ${dec(r.costoKw)}</td>
+      <td class="calc">$ ${dec(r.costoKwConImpuestos)}</td>
+      <td class="calc">${qty(r.energiaTotal)}</td>
+      <td class="calc">${qty(r.inyectadaAcum)}</td>
+      <td class="inputcol">${qty(r.inyectadaMes)}</td>
+      <td class="calc">${pct(r.pctInyectada)}</td>
+      <td class="calc">${qty(r.netoConsumo)}</td>
+      <td class="calc ok">${qty(r.consumoSinSolar)}</td>
+      <td class="calc">${dec(r.promDia)}</td>
+      <td class="inputcol">$ ${money(r.subsidio)}</td>
+      <td class="calc">$ ${money(r.valorFactura)}</td>
+      <td class="calc">$ ${dec(r.facturaKw)}</td>
+      <td>
+        <button class="warn" onclick="editarFila('${r.id}')">Editar</button>
+        <button class="danger" onclick="eliminarFila('${r.id}')">Eliminar</button>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('tabla').innerHTML = html;
 }
-function agregarPlanilla(){ if(!normalizarCampoSuma('impuestos'))return; if(!normalizarCampoSuma('subsidio'))return; const mes=mesTexto(document.getElementById('mesSelect').value,document.getElementById('anioSelect').value); const lectura=num(document.getElementById('lectura').value); if(lectura<=0){alert('Ingresa la lectura actual.');return;} datos.push({orden:Date.now(),mes,consumoDolares:num(document.getElementById('consumoDolares').value),impuestos:num(document.getElementById('impuestos').value),lectura,inyectadaMes:num(document.getElementById('inyectadaMes').value),subsidio:num(document.getElementById('subsidio').value),legacy:{}}); limpiarFormulario(); editIdx=null; recalcularYRenderizar(); }
-function editarFila(idx){ editIdx=idx; backupEdit=JSON.parse(JSON.stringify(datos[idx])); recalcularYRenderizar(); }
-function guardarEdicion(idx){ try{ const m=document.getElementById(`e_mes_${idx}`).value; const a=document.getElementById(`e_anio_${idx}`).value; datos[idx].mes=mesTexto(m,a); datos[idx].consumoDolares=num(document.getElementById(`e_consumo_${idx}`).value); datos[idx].impuestos=normalizarValorSuma(document.getElementById(`e_impuestos_${idx}`).value); datos[idx].lectura=num(document.getElementById(`e_lectura_${idx}`).value); datos[idx].inyectadaMes=num(document.getElementById(`e_inyectada_${idx}`).value); datos[idx].subsidio=normalizarValorSuma(document.getElementById(`e_subsidio_${idx}`).value); editIdx=null; backupEdit=null; recalcularYRenderizar(); }catch(e){ alert('Revisa Impuestos/Subsidio. Puedes usar formato 12.50+3.40'); } }
-function cancelarEdicion(){ if(editIdx!==null && backupEdit) datos[editIdx]=backupEdit; editIdx=null; backupEdit=null; recalcularYRenderizar(); }
-function limpiarFormulario(){ ['consumoDolares','impuestos','lectura','inyectadaMes','subsidio'].forEach(id=>document.getElementById(id).value=''); }
-function eliminarFila(idx){ if(confirm('¿Eliminar esta línea del reporte?')){ datos.splice(idx,1); editIdx=null; recalcularYRenderizar(); } }
-function reiniciarDatos(){ if(confirm('Esto borra los datos guardados en este navegador y restaura el histórico original del Excel. ¿Continuar?')){ localStorage.removeItem(STORAGE_KEY); datos=JSON.parse(JSON.stringify(datosIniciales)); editIdx=null; resumenKeySeleccionado=null; recalcularYRenderizar(); } }
-function exportarCSV(){ const rows=calcular().slice().reverse(); const headers=['Mes','Consumo $','Impuestos $','Total sin subsidio $','% impuestos','Lectura anterior','Lectura actual','Consumo mes kWh','$/kWh consumo','$/kWh con impuestos','Energia total','Inyectada acumulada','Inyectada mes','% inyectada','Neto consumo','Consumo sin solar','Promedio dia','Subsidio $','Valor factura $','Factura $/kWh']; const csvRows=[headers.join(';')]; rows.forEach(r=>csvRows.push([r.mesVisible,r.consumoDolares,r.impuestos,r.totalSinSubsidio,r.pctImpuestos,r.lecturaAnterior,r.lectura,r.consumoMes,r.costoKw,r.costoKwConImpuestos,r.energiaTotal,r.inyectadaAcum,r.inyectadaMes,r.pctInyectada,r.netoConsumo,r.consumoSinSolar,r.promDia,r.subsidio,r.valorFactura,r.facturaKw].join(';'))); descargarArchivo('reporte_energia_pacifica.csv', csvRows.join('
-'), 'text/csv;charset=utf-8;'); }
-function descargarArchivo(nombre, contenido, tipo){ const blob=new Blob([contenido],{type:tipo}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); }
-function respaldarDatos(){ const respaldo={version:6,fecha:new Date().toISOString(),datos}; descargarArchivo('respaldo_energia_pacifica.json', JSON.stringify(respaldo,null,2), 'application/json;charset=utf-8;'); }
-function restaurarRespaldo(event){ const file=event.target.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=function(){ try{ const obj=JSON.parse(reader.result); const nuevos=Array.isArray(obj)?obj:obj.datos; if(!Array.isArray(nuevos)) throw new Error('Sin datos'); datos=nuevos; editIdx=null; resumenKeySeleccionado=null; recalcularYRenderizar(); alert('Respaldo restaurado correctamente.'); }catch(e){ alert('No pude restaurar el respaldo. Revisa que sea el archivo JSON correcto.'); } finally { event.target.value=''; } }; reader.readAsText(file); }
-document.addEventListener('DOMContentLoaded',()=>{ initSelects(); activarSumasConEnter(); cargarDatos(); });
+
+function recalcularYRenderizar(save=true){
+  const calc = calcular();
+  poblarResumen(calc);
+  renderResumenSeleccionado();
+  renderTabla(ordenarReciente(calc));
+  if(save) guardarLocal();
+}
+
+function limpiarFormulario(){
+  ['consumoDolares','impuestos','lectura','inyectadaMes','subsidio'].forEach(id=>document.getElementById(id).value='');
+  const hoy = new Date();
+  document.getElementById('month').value = hoy.getMonth()+1;
+  document.getElementById('year').value = hoy.getFullYear();
+}
+function cancelarEdicion(){
+  editId = null;
+  document.getElementById('formTitle').textContent = 'Ingresar nueva planilla';
+  document.getElementById('btnGuardar').textContent = '➕ Agregar';
+  limpiarFormulario();
+  recalcularYRenderizar(false);
+}
+
+function guardarPlanilla(){
+  if(!normalizarCampoSuma('impuestos')) return;
+  if(!normalizarCampoSuma('subsidio')) return;
+  const month = Number(document.getElementById('month').value);
+  const year = Number(document.getElementById('year').value);
+  const lectura = num(document.getElementById('lectura').value);
+  if(!month || !year) { alert('Elige mes y año.'); return; }
+  if(lectura <= 0) { alert('Ingresa la lectura actual.'); return; }
+
+  const registro = {
+    id: editId || ('m_' + Date.now()),
+    year, month,
+    consumoDolares: num(document.getElementById('consumoDolares').value),
+    impuestos: num(document.getElementById('impuestos').value),
+    lectura,
+    inyectadaMes: num(document.getElementById('inyectadaMes').value),
+    subsidio: num(document.getElementById('subsidio').value)
+  };
+
+  const mismoPeriodo = datos.find(d => d.id !== editId && Number(d.year)===year && Number(d.month)===month);
+  if(mismoPeriodo && !confirm('Ya existe una línea para ' + periodoTexto(registro) + '. ¿Deseas agregar otra de todos modos?')) return;
+
+  if(editId) {
+    const idx = datos.findIndex(d=>d.id===editId);
+    if(idx >= 0) datos[idx] = registro;
+  } else {
+    datos.push(registro);
+  }
+  cancelarEdicion();
+  recalcularYRenderizar(true);
+}
+
+function editarFila(id){
+  const d = datos.find(x=>x.id===id);
+  if(!d) return;
+  editId = id;
+  document.getElementById('formTitle').textContent = 'Editando: ' + periodoTexto(d);
+  document.getElementById('btnGuardar').textContent = '💾 Guardar cambios';
+  document.getElementById('month').value = Number(d.month);
+  document.getElementById('year').value = Number(d.year);
+  document.getElementById('consumoDolares').value = d.consumoDolares;
+  document.getElementById('impuestos').value = d.impuestos;
+  document.getElementById('lectura').value = d.lectura;
+  document.getElementById('inyectadaMes').value = d.inyectadaMes;
+  document.getElementById('subsidio').value = d.subsidio;
+  recalcularYRenderizar(false);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function eliminarFila(id){
+  const d = datos.find(x=>x.id===id);
+  if(!d) return;
+  if(confirm('¿Eliminar la línea de ' + periodoTexto(d) + '?')) {
+    datos = datos.filter(x=>x.id!==id);
+    if(editId === id) cancelarEdicion();
+    recalcularYRenderizar(true);
+  }
+}
+
+function reiniciarDatos(){
+  if(confirm('Esto borra los datos guardados en este navegador y restaura las líneas históricas del Excel. ¿Continuar?')) {
+    localStorage.removeItem(STORAGE_KEY);
+    datos = JSON.parse(JSON.stringify(DATOS_INICIALES));
+    editId = null;
+    recalcularYRenderizar(true);
+  }
+}
+
+function respaldarDatos(){
+  const payload = {
+    app:'energia_pacifica',
+    version:6,
+    fechaRespaldo:new Date().toISOString(),
+    datos
+  };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'respaldo_energia_pacifica_' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function restaurarRespaldo(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      const payload = JSON.parse(e.target.result);
+      const nuevos = Array.isArray(payload) ? payload : payload.datos;
+      if(!Array.isArray(nuevos) || nuevos.length===0) throw new Error('Archivo inválido');
+      datos = nuevos.map((d,i)=>({
+        id: d.id || ('rest_' + Date.now() + '_' + i),
+        year: Number(d.year),
+        month: Number(d.month),
+        consumoDolares: num(d.consumoDolares),
+        impuestos: num(d.impuestos),
+        lectura: num(d.lectura),
+        inyectadaMes: num(d.inyectadaMes),
+        subsidio: num(d.subsidio)
+      })).filter(d=>d.year && d.month && d.lectura);
+      editId = null;
+      recalcularYRenderizar(true);
+      alert('Respaldo restaurado correctamente.');
+    } catch(err) {
+      alert('No se pudo restaurar el respaldo. Revisa que sea el archivo JSON generado por esta app.');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function exportarCSV(){
+  const rows = ordenarReciente(calcular());
+  const headers = ['Mes','Consumo $','Impuestos $','Total sin subsidio $','% impuestos','Lectura anterior','Lectura actual','Consumo mes kWh','$/kWh consumo','$/kWh con impuestos','Energia total','Inyectada acumulada','Inyectada mes','% inyectada','Neto consumo','Consumo sin solar','Promedio dia','Subsidio $','Valor factura $','Factura $/kWh'];
+  const csvRows = [headers.join(';')];
+  rows.forEach(r => {
+    csvRows.push([
+      r.periodo,r.consumoDolares,r.impuestos,r.totalSinSubsidio,r.pctImpuestos,r.lecturaAnterior,r.lectura,r.consumoMes,r.costoKw,r.costoKwConImpuestos,r.energiaTotal,r.inyectadaAcum,r.inyectadaMes,r.pctInyectada,r.netoConsumo,r.consumoSinSolar,r.promDia,r.subsidio,r.valorFactura,r.facturaKw
+    ].join(';'));
+  });
+  const blob = new Blob([csvRows.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'reporte_energia_pacifica.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+}
+
+document.addEventListener('DOMContentLoaded', function(){
+  llenarSelects();
+  activarSumasConEnter();
+  cargarDatos();
+});
 </script>
 </body>
 </html>
