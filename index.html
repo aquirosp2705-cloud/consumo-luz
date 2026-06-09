@@ -52,7 +52,7 @@ td:first-child{background:white;font-weight:bold}
     <div><label>Año</label><select id="year"></select></div>
     <div><label>Consumo $</label><input id="consumoDolares" type="number" step="0.01"></div>
     <div><label>Impuestos $</label><input id="impuestos" type="text" inputmode="text" placeholder="Ej: 12.50+3.40"></div>
-    <div><label>Lectura</label><input id="lectura" type="number" step="1"></div>
+    <div><label>Lectura</label><input id="lectura" type="text" inputmode="text" placeholder="Ej: 21903+820"></div>
     <div><label>Inyectado mes kWh</label><input id="inyectadaMes" type="number" step="1"></div>
     <div><label>Subsidio $</label><input id="subsidio" type="text" inputmode="text" placeholder="Ej: 20+5.35"></div>
     <div><button id="btnGuardar" onclick="guardarPlanilla()">➕ Agregar</button></div>
@@ -66,7 +66,7 @@ td:first-child{background:white;font-weight:bold}
     <button class="danger" onclick="reiniciarDatos()">↩️ Restaurar histórico original</button>
   </div>
   <div class="notice">
-    Impuestos $ y Subsidio $ aceptan sumas: escribe por ejemplo <b>12.50+3.40</b> y presiona Enter o sal de la celda. 
+    Impuestos $, Subsidio $ y Lectura aceptan operaciones: escribe por ejemplo <b>12.50+3.40</b> y presiona Enter o sal de la celda. 
     Cada fila histórica tiene botón <b>Editar</b>. Los datos se guardan automáticamente en este navegador.
   </div>
 </section>
@@ -119,30 +119,34 @@ function ordenarReciente(arr) { return arr.slice().sort((a,b)=>periodoKey(b)-per
 function evaluarSuma(valor) {
   const texto = String(valor ?? '').trim();
   if(!texto) return 0;
-  if(!/^[0-9.,+\s-]+$/.test(texto)) return NaN;
-  return texto.split('+').reduce((total, parte) => {
-    const limpio = parte.trim().replace(',', '.');
-    if(limpio === '') return total;
-    const n = Number(limpio);
+  // Permite operaciones simples con + y - usando punto o coma decimal.
+  // Ejemplos válidos: 12.50+3.40, 21903+820, 1000-25+10
+  if(!/^[0-9.,+\-\s]+$/.test(texto)) return NaN;
+  const limpio = texto.replace(/,/g, '.').replace(/\s+/g, '');
+  const partes = limpio.match(/[+\-]?[^+\-]+/g);
+  if(!partes) return NaN;
+  return partes.reduce((total, parte) => {
+    const n = Number(parte);
     if(!isFinite(n)) throw new Error('Número inválido');
     return total + n;
   }, 0);
 }
 function normalizarCampoSuma(id){
   const campo = document.getElementById(id);
+  const nombres = { impuestos:'Impuestos', subsidio:'Subsidio', lectura:'Lectura' };
   try {
     const total = evaluarSuma(campo.value);
     if(isNaN(total)) throw new Error('Valor inválido');
-    campo.value = total ? total.toFixed(2) : '';
+    campo.value = total ? (id === 'lectura' ? String(Number(total.toFixed(2))) : total.toFixed(2)) : '';
     return true;
   } catch(e) {
-    alert('En ' + (id === 'impuestos' ? 'Impuestos' : 'Subsidio') + ' solo ingresa números sumados con +. Ejemplo: 12.50+3.40');
+    alert('En ' + (nombres[id] || 'este campo') + ' solo ingresa números con + o -. Ejemplo: 12.50+3.40');
     campo.focus();
     return false;
   }
 }
 function activarSumasConEnter(){
-  ['impuestos','subsidio'].forEach(id => {
+  ['impuestos','subsidio','lectura'].forEach(id => {
     const campo = document.getElementById(id);
     campo.addEventListener('keydown', function(e){
       if(e.key === 'Enter') {
@@ -151,7 +155,7 @@ function activarSumasConEnter(){
       }
     });
     campo.addEventListener('blur', function(){
-      if(campo.value.includes('+')) normalizarCampoSuma(id);
+      if(/[+\-]/.test(campo.value)) normalizarCampoSuma(id);
     });
   });
 }
@@ -183,7 +187,7 @@ function calcular(){
     const lecturaAnterior = prev ? num(prev.lectura) : 0;
     const consumoMes = prev ? lectura - lecturaAnterior : 0;
     acumInyectada += inyectadaMes;
-    const totalSinSubsidio = consumoDolares + impuestos;
+    const totalSinSubsidio = consumoDolares - impuestos;
     const valorFactura = totalSinSubsidio - subsidio;
     const consumoSinSolar = consumoMes + inyectadaMes;
     return {
@@ -193,6 +197,7 @@ function calcular(){
       consumoMes,
       totalSinSubsidio,
       pctImpuestos: div(impuestos, consumoDolares),
+      pctSubsidio: div(subsidio, consumoDolares),
       costoKw: div(consumoDolares, consumoMes),
       costoKwConImpuestos: div(totalSinSubsidio, consumoMes),
       energiaTotal: lectura + acumInyectada,
@@ -249,7 +254,7 @@ function renderTabla(rows){
     '$/kWh consumo','$/kWh con impuestos','Energía total',
     'Inyectada acum.','Inyectada mes','% inyectada',
     'Neto consumo','Consumo sin solar','Prom. día',
-    'Subsidio $','Valor factura $','Factura $/kWh','Acción'
+    'Subsidio $','% subsidio','Total factura $','Factura $/kWh','Acción'
   ];
   let html = '<thead><tr>' + headers.map(h=>'<th>'+h+'</th>').join('') + '</tr></thead><tbody>';
   rows.forEach(r => {
@@ -272,8 +277,9 @@ function renderTabla(rows){
       <td class="calc">${pct(r.pctInyectada)}</td>
       <td class="calc">${qty(r.netoConsumo)}</td>
       <td class="calc ok">${qty(r.consumoSinSolar)}</td>
-      <td class="calc">${dec(r.promDia)}</td>
+      <td class="calc">${qty(r.promDia)}</td>
       <td class="inputcol">$ ${money(r.subsidio)}</td>
+      <td class="calc">${pct(r.pctSubsidio)}</td>
       <td class="calc">$ ${money(r.valorFactura)}</td>
       <td class="calc">$ ${dec(r.facturaKw)}</td>
       <td>
@@ -311,6 +317,7 @@ function cancelarEdicion(){
 function guardarPlanilla(){
   if(!normalizarCampoSuma('impuestos')) return;
   if(!normalizarCampoSuma('subsidio')) return;
+  if(!normalizarCampoSuma('lectura')) return;
   const month = Number(document.getElementById('month').value);
   const year = Number(document.getElementById('year').value);
   const lectura = num(document.getElementById('lectura').value);
@@ -424,11 +431,11 @@ function restaurarRespaldo(event){
 
 function exportarCSV(){
   const rows = ordenarReciente(calcular());
-  const headers = ['Mes','Consumo $','Impuestos $','Total sin subsidio $','% impuestos','Lectura anterior','Lectura actual','Consumo mes kWh','$/kWh consumo','$/kWh con impuestos','Energia total','Inyectada acumulada','Inyectada mes','% inyectada','Neto consumo','Consumo sin solar','Promedio dia','Subsidio $','Valor factura $','Factura $/kWh'];
+  const headers = ['Mes','Consumo $','Impuestos $','Total sin subsidio $','% impuestos','Lectura anterior','Lectura actual','Consumo mes kWh','$/kWh consumo','$/kWh con impuestos','Energia total','Inyectada acumulada','Inyectada mes','% inyectada','Neto consumo','Consumo sin solar','Promedio dia','Subsidio $','% subsidio','Total factura $','Factura $/kWh'];
   const csvRows = [headers.join(';')];
   rows.forEach(r => {
     csvRows.push([
-      r.periodo,r.consumoDolares,r.impuestos,r.totalSinSubsidio,r.pctImpuestos,r.lecturaAnterior,r.lectura,r.consumoMes,r.costoKw,r.costoKwConImpuestos,r.energiaTotal,r.inyectadaAcum,r.inyectadaMes,r.pctInyectada,r.netoConsumo,r.consumoSinSolar,r.promDia,r.subsidio,r.valorFactura,r.facturaKw
+      r.periodo,r.consumoDolares,r.impuestos,r.totalSinSubsidio,r.pctImpuestos,r.lecturaAnterior,r.lectura,r.consumoMes,r.costoKw,r.costoKwConImpuestos,r.energiaTotal,r.inyectadaAcum,r.inyectadaMes,r.pctInyectada,r.netoConsumo,r.consumoSinSolar,r.promDia,r.subsidio,r.pctSubsidio,r.valorFactura,r.facturaKw
     ].join(';'));
   });
   const blob = new Blob([csvRows.join('\n')], {type:'text/csv;charset=utf-8;'});
