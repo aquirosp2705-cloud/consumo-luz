@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v9</title>
+<title>Consumo Energía Pacífica v10</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -35,6 +35,9 @@ td:first-child{background:white;font-weight:bold}
 .inputcol{background:var(--amarillo)} .calc{background:#f8fafc} .ok{background:var(--verde)} .neg{color:#b91c1c;font-weight:bold}
 .small{font-size:12px;color:#64748b}
 .editing{outline:3px solid #f59e0b}
+.cell-input{width:95px;min-width:80px;padding:6px;border:1px solid #cbd5e1;border-radius:7px;background:#fff2cc;text-align:right;font-size:12px}
+.cell-select{width:92px;min-width:82px;padding:6px;border:1px solid #cbd5e1;border-radius:7px;background:#fff2cc;font-size:12px}
+.cell-input:focus,.cell-select:focus{outline:2px solid #f59e0b}
 @media(max-width:1000px){.form-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -67,7 +70,7 @@ td:first-child{background:white;font-weight:bold}
   </div>
   <div class="notice">
     Total consumo $, Impuestos $, Subsidio $ y Lectura aceptan operaciones: escribe por ejemplo <b>12.50+3.40</b> y presiona Enter o sal de la celda. 
-    Cada fila histórica tiene botón <b>Editar</b>. Los datos se guardan automáticamente en este navegador.
+    Puedes editar directamente en la tabla o usar el botón <b>Editar</b> para cargar la fila arriba. Los datos se guardan automáticamente en este navegador.
   </div>
 </section>
 
@@ -118,7 +121,7 @@ td:first-child{background:white;font-weight:bold}
 <script>
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 const DATOS_INICIALES = [{"id": "hist_1", "year": 2022, "month": 7, "consumoDolares": 87.87, "impuestos": 32.82, "lectura": 5554.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_2", "year": 2022, "month": 8, "consumoDolares": 139.07, "impuestos": 49.92, "lectura": 6372.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_3", "year": 2022, "month": 9, "consumoDolares": 146.93, "impuestos": 52.55, "lectura": 7536.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_4", "year": 2022, "month": 10, "consumoDolares": 73.99, "impuestos": 28.21, "lectura": 8225.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_5", "year": 2022, "month": 11, "consumoDolares": 62.29, "impuestos": 24.34, "lectura": 8823.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_6", "year": 2022, "month": 12, "consumoDolares": 87.52, "impuestos": 32.63, "lectura": 9639.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_7", "year": 2023, "month": 1, "consumoDolares": 94.21, "impuestos": 36.65, "lectura": 10551.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_8", "year": 2023, "month": 2, "consumoDolares": 89.55, "impuestos": 34.78, "lectura": 11421.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_9", "year": 2023, "month": 3, "consumoDolares": 82.9, "impuestos": 32.08, "lectura": 12231.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_10", "year": 2023, "month": 4, "consumoDolares": 95.54, "impuestos": 37.19, "lectura": 13155.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_11", "year": 2023, "month": 5, "consumoDolares": 73.81, "impuestos": 28.4, "lectura": 13883.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_12", "year": 2023, "month": 6, "consumoDolares": 101.36, "impuestos": 38.96, "lectura": 14762.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_13", "year": 2023, "month": 7, "consumoDolares": 97.3, "impuestos": 37.36, "lectura": 101.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_14", "year": 2023, "month": 8, "consumoDolares": 49.28, "impuestos": 20.16, "lectura": 597.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_15", "year": 2023, "month": 9, "consumoDolares": 49.18, "impuestos": 20.13, "lectura": 1092.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_16", "year": 2023, "month": 10, "consumoDolares": 44.35, "impuestos": 18.56, "lectura": 1541.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_17", "year": 2023, "month": 11, "consumoDolares": 48.55, "impuestos": 19.93, "lectura": 2030.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_18", "year": 2023, "month": 12, "consumoDolares": 61.25, "impuestos": 24.07, "lectura": 2640.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_19", "year": 2024, "month": 1, "consumoDolares": 74.47, "impuestos": 28.43, "lectura": 3374.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_20", "year": 2024, "month": 2, "consumoDolares": 59.26, "impuestos": 22.61, "lectura": 3965.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_21", "year": 2024, "month": 3, "consumoDolares": 77.35, "impuestos": 29.14, "lectura": 4725.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_22", "year": 2024, "month": 4, "consumoDolares": 72.47, "impuestos": 27.71, "lectura": 5441.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_23", "year": 2024, "month": 5, "consumoDolares": 90.95, "impuestos": 31.64, "lectura": 6242.0, "inyectadaMes": 80.0, "subsidio": 45.03}, {"id": "hist_24", "year": 2024, "month": 6, "consumoDolares": 68.46, "impuestos": 25.07, "lectura": 6888.0, "inyectadaMes": 80.0, "subsidio": 34.23}, {"id": "hist_25", "year": 2024, "month": 7, "consumoDolares": 47.71, "impuestos": 18.23, "lectura": 7369.0, "inyectadaMes": 80.0, "subsidio": 23.86}, {"id": "hist_26", "year": 2024, "month": 8, "consumoDolares": 53.17, "impuestos": 20.48, "lectura": 7896.0, "inyectadaMes": 80.0, "subsidio": 26.59}, {"id": "hist_27", "year": 2024, "month": 9, "consumoDolares": 60.37, "impuestos": 22.9, "lectura": 8479.0, "inyectadaMes": 80.0, "subsidio": 30.9}, {"id": "hist_28", "year": 2024, "month": 10, "consumoDolares": 81.2, "impuestos": 29.06, "lectura": 9219.0, "inyectadaMes": 80.0, "subsidio": 40.6}, {"id": "hist_29", "year": 2024, "month": 11, "consumoDolares": 74.25, "impuestos": 18.68, "lectura": 9951.0, "inyectadaMes": 80.0, "subsidio": 28.31}, {"id": "hist_30", "year": 2024, "month": 12, "consumoDolares": 97.43, "impuestos": 36.8, "lectura": 10892.0, "inyectadaMes": 80.0, "subsidio": 48.72}, {"id": "hist_31", "year": 2025, "month": 1, "consumoDolares": 79.79, "impuestos": 29.83, "lectura": 11674.0, "inyectadaMes": 101.0, "subsidio": 40.61}, {"id": "hist_32", "year": 2025, "month": 2, "consumoDolares": 62.72, "impuestos": 23.71, "lectura": 12298.0, "inyectadaMes": 126.0, "subsidio": 31.36}, {"id": "hist_33", "year": 2025, "month": 3, "consumoDolares": 72.03, "impuestos": 26.92, "lectura": 13010.0, "inyectadaMes": 158.0, "subsidio": 36.02}, {"id": "hist_34", "year": 2025, "month": 4, "consumoDolares": 65.03, "impuestos": 24.26, "lectura": 13656.0, "inyectadaMes": 124.0, "subsidio": 32.52}, {"id": "hist_35", "year": 2025, "month": 5, "consumoDolares": 66.79, "impuestos": 24.72, "lectura": 14289.0, "inyectadaMes": 98.0, "subsidio": 33.4}, {"id": "hist_36", "year": 2025, "month": 6, "consumoDolares": 59.98, "impuestos": 22.15, "lectura": 14869.0, "inyectadaMes": 87.0, "subsidio": 29.99}, {"id": "hist_37", "year": 2025, "month": 7, "consumoDolares": 52.27, "impuestos": 20.31, "lectura": 15389.0, "inyectadaMes": 111.0, "subsidio": 26.14}, {"id": "hist_38", "year": 2025, "month": 8, "consumoDolares": 56.25, "impuestos": 21.26, "lectura": 15940.0, "inyectadaMes": 94.0, "subsidio": 28.13}, {"id": "hist_39", "year": 2025, "month": 9, "consumoDolares": 64.86, "impuestos": 24.26, "lectura": 16558.0, "inyectadaMes": 101.0, "subsidio": 32.43}, {"id": "hist_40", "year": 2025, "month": 10, "consumoDolares": 71.03, "impuestos": 25.73, "lectura": 17224.0, "inyectadaMes": 123.0, "subsidio": 35.52}, {"id": "hist_41", "year": 2025, "month": 11, "consumoDolares": 73.53, "impuestos": 21.5, "lectura": 17854.0, "inyectadaMes": 92.0, "subsidio": 31.68}, {"id": "hist_42", "year": 2025, "month": 12, "consumoDolares": 83.79, "impuestos": 24.5, "lectura": 18672.0, "inyectadaMes": 109.0, "subsidio": 42.61}, {"id": "hist_43", "year": 2026, "month": 1, "consumoDolares": 105.19, "impuestos": 14.99, "lectura": 19362.0, "inyectadaMes": 80.0, "subsidio": 35.54}, {"id": "hist_44", "year": 2026, "month": 2, "consumoDolares": 108.59, "impuestos": 15.53, "lectura": 20073.0, "inyectadaMes": 102.0, "subsidio": 36.67}, {"id": "hist_45", "year": 2026, "month": 3, "consumoDolares": 159.23, "impuestos": 22.94, "lectura": 21083.0, "inyectadaMes": 150.0, "subsidio": 53.55}, {"id": "hist_46", "year": 2026, "month": 4, "consumoDolares": 126.73, "impuestos": 20.57, "lectura": 21903.0, "inyectadaMes": 123.0, "subsidio": 42.72}];
-const STORAGE_KEY = 'energiaPacificaDatosV9';
+const STORAGE_KEY = 'energiaPacificaDatosV10';
 let datos = [];
 let editId = null;
 
@@ -271,9 +274,26 @@ function renderResumenSeleccionado(){
   document.getElementById('kpiSinSolar').textContent = qty(r.consumoSinSolar);
 }
 
+function opcionesMes(selected){
+  return MESES.map((m,i)=>`<option value="${i+1}" ${Number(selected)===i+1?'selected':''}>${m}</option>`).join('');
+}
+function opcionesYear(selected){
+  const yActual = new Date().getFullYear();
+  let years = [];
+  for(let y=2022; y<=Math.max(2032, yActual+3); y++) years.push(y);
+  return years.map(y=>`<option value="${y}" ${Number(selected)===y?'selected':''}>${y}</option>`).join('');
+}
+function valorInput(v, decimales=2){
+  const n = Number(v||0);
+  if(decimales===0) return String(Math.round(n));
+  return Number(n.toFixed(decimales)).toString();
+}
+function inputLinea(id, campo, valor, decimales=2){
+  return `<input class="cell-input" type="text" inputmode="text" value="${valorInput(valor, decimales)}" data-id="${id}" data-campo="${campo}" onkeydown="teclaLinea(event,this)" onblur="guardarCampoLinea(this)">`;
+}
 function renderTabla(rows){
   const headers = [
-    'Mes','Consumo $','Impuestos $','Total sin subsidio $','% impuestos',
+    'Mes','Año','Consumo $','Impuestos $','Total sin subsidio $','% impuestos',
     'Lectura anterior','Lectura actual','Consumo mes kWh',
     '$/kWh consumo','$/kWh con impuestos','Energía total',
     'Inyectada acum.','Inyectada mes','% inyectada',
@@ -285,29 +305,30 @@ function renderTabla(rows){
     const neg = r.consumoMes < 0 ? ' neg' : '';
     const editingClass = r.id === editId ? ' class="editing"' : '';
     html += `<tr${editingClass}>
-      <td>${r.periodo}</td>
-      <td class="inputcol">$ ${money(r.consumoDolares)}</td>
-      <td class="inputcol">$ ${money(r.impuestos)}</td>
+      <td><select class="cell-select" data-id="${r.id}" data-campo="month" onchange="guardarCampoLinea(this)">${opcionesMes(r.month)}</select></td>
+      <td><select class="cell-select" data-id="${r.id}" data-campo="year" onchange="guardarCampoLinea(this)">${opcionesYear(r.year)}</select></td>
+      <td class="inputcol">${inputLinea(r.id,'consumoDolares',r.consumoDolares,2)}</td>
+      <td class="inputcol">${inputLinea(r.id,'impuestos',r.impuestos,2)}</td>
       <td class="calc">$ ${money(r.totalSinSubsidio)}</td>
       <td class="calc">${pct(r.pctImpuestos)}</td>
       <td class="calc">${qty(r.lecturaAnterior)}</td>
-      <td class="inputcol">${qty(r.lectura)}</td>
+      <td class="inputcol">${inputLinea(r.id,'lectura',r.lectura,0)}</td>
       <td class="calc${neg}">${qty(r.consumoMes)}</td>
       <td class="calc">$ ${dec(r.costoKw)}</td>
       <td class="calc">$ ${dec(r.costoKwConImpuestos)}</td>
       <td class="calc">${qty(r.energiaTotal)}</td>
       <td class="calc">${qty(r.inyectadaAcum)}</td>
-      <td class="inputcol">${qty(r.inyectadaMes)}</td>
+      <td class="inputcol">${inputLinea(r.id,'inyectadaMes',r.inyectadaMes,0)}</td>
       <td class="calc">${pct(r.pctInyectada)}</td>
       <td class="calc">${qty(r.netoConsumo)}</td>
       <td class="calc ok">${qty(r.consumoSinSolar)}</td>
       <td class="calc">${qty(r.promDia)}</td>
-      <td class="inputcol">$ ${money(r.subsidio)}</td>
+      <td class="inputcol">${inputLinea(r.id,'subsidio',r.subsidio,2)}</td>
       <td class="calc">${pct(r.pctSubsidio)}</td>
       <td class="calc">$ ${money(r.valorFactura)}</td>
       <td class="calc">$ ${dec(r.facturaKw)}</td>
       <td>
-        <button class="warn" onclick="editarFila('${r.id}')">Editar</button>
+        <button class="warn" onclick="editarFila('${r.id}')">Editar arriba</button>
         <button class="danger" onclick="eliminarFila('${r.id}')">Eliminar</button>
       </td>
     </tr>`;
@@ -315,6 +336,34 @@ function renderTabla(rows){
   html += '</tbody>';
   document.getElementById('tabla').innerHTML = html;
 }
+
+function teclaLinea(event, el){
+  if(event.key === 'Enter') {
+    event.preventDefault();
+    guardarCampoLinea(el);
+    el.blur();
+  }
+}
+function guardarCampoLinea(el){
+  const id = el.dataset.id;
+  const campo = el.dataset.campo;
+  const d = datos.find(x=>x.id===id);
+  if(!d || !campo) return;
+  let valor = el.value;
+  if(['consumoDolares','impuestos','lectura','inyectadaMes','subsidio'].includes(campo)){
+    const total = evaluarSuma(valor);
+    if(isNaN(total)){
+      alert('Operación inválida. Usa números con + o -. Ejemplo: 12.50+3.40');
+      el.focus();
+      return;
+    }
+    d[campo] = total;
+  } else if(campo === 'month' || campo === 'year') {
+    d[campo] = Number(valor);
+  }
+  recalcularYRenderizar(true);
+}
+
 
 function recalcularYRenderizar(save=true){
   const calc = calcular();
@@ -411,7 +460,7 @@ function reiniciarDatos(){
 function respaldarDatos(){
   const payload = {
     app:'energia_pacifica',
-    version:9,
+    version:10,
     fechaRespaldo:new Date().toISOString(),
     datos
   };
