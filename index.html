@@ -347,10 +347,12 @@ function calcular(){
 }
 
 // Inserta la línea independiente de julio 2026 y marca julio 2026 como medidor nuevo si aún no está hecho.
+// Solo actúa sobre datos viejos (v10): si ya hay cualquier rastro del cambio de medidor, no toca nada.
 function insertarCambioMedidor2026(){
-  const yaCierre = datos.some(d => esCierre(d) && Number(d.year)===2026 && Number(d.month)===7);
-  const jul = datos.find(d => !esCierre(d) && Number(d.year)===2026 && Number(d.month)===7);
-  if(!jul || yaCierre) return false;
+  const esJul2026 = d => Number(d.year)===2026 && Number(d.month)===7;
+  const yaHecho = datos.some(d => d.id === CIERRE_2026_07.id || (esJul2026(d) && tipoDe(d) !== 'normal'));
+  const jul = datos.find(d => esJul2026(d) && tipoDe(d) === 'normal');
+  if(!jul || yaHecho) return false;
   datos.push(JSON.parse(JSON.stringify(CIERRE_2026_07)));
   jul.tipo = 'cambio';
   if(!tieneValor(jul.consumoMesManual)) jul.consumoMesManual = 960;
@@ -368,14 +370,16 @@ function cargarDatos(){
     datos = JSON.parse(JSON.stringify(DATOS_INICIALES));
   }
   let guardar = false;
-  if(desdeGuardado && !localStorage.getItem(MIGRACION_KEY)) {
-    guardar = insertarCambioMedidor2026();
-    localStorage.setItem(MIGRACION_KEY, '1');
-  }
+  if(desdeGuardado && !localStorage.getItem(MIGRACION_KEY)) guardar = insertarCambioMedidor2026();
+  // La marca se graba siempre: los datos iniciales ya traen el cambio de medidor y no hay que volver a migrar.
+  marcarMigracionHecha();
   recalcularYRenderizar(guardar);
 }
 function guardarLocal(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(datos));
+}
+function marcarMigracionHecha(){
+  try { localStorage.setItem(MIGRACION_KEY, '1'); } catch(e) {}
 }
 
 function poblarResumen(calc){
@@ -674,7 +678,7 @@ function eliminarFila(id){
 function reiniciarDatos(){
   if(confirm('Esto borra los datos guardados en este navegador y restaura las líneas históricas originales (hasta agosto 2026, con el cambio de medidor de julio). ¿Continuar?')) {
     localStorage.removeItem(STORAGE_KEY);
-    localStorage.setItem(MIGRACION_KEY, '1');
+    marcarMigracionHecha();
     datos = JSON.parse(JSON.stringify(DATOS_INICIALES));
     editId = null;
     recalcularYRenderizar(true);
@@ -730,6 +734,7 @@ function restaurarRespaldo(event){
       // Respaldos anteriores a la v11 no traen el cambio de medidor de julio 2026: se agrega automáticamente.
       let aviso = 'Respaldo restaurado correctamente.';
       if(versionRespaldo < 11 && insertarCambioMedidor2026()) aviso += '\nSe agregó la línea independiente de julio 2026 (medidor anterior) y se marcó julio 2026 como medidor nuevo.';
+      marcarMigracionHecha();
       editId = null;
       recalcularYRenderizar(true);
       alert(aviso);
@@ -756,7 +761,7 @@ function exportarCSV(){
       r.periodo,TIPOS[tipoDe(r)],r.consumoDolares,r.impuestos,r.totalSinSubsidio,r.pctImpuestos,(tipoDe(r)==='cambio' ? '' : r.lecturaAnterior),r.lectura,r.consumoMes,r.costoKw,r.costoKwConImpuestos,r.energiaTotal,r.inyectadaAcum,r.inyectadaMes,r.pctInyectada,r.netoConsumo,r.consumoSinSolar,r.promDia,r.subsidio,r.pctSubsidio,r.valorFactura,r.facturaKw
     ].join(';'));
   });
-  const blob = new Blob([csvRows.join('\n')], {type:'text/csv;charset=utf-8;'});
+  const blob = new Blob(['\ufeff' + csvRows.join('\n')], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url; a.download = 'reporte_energia_pacifica.csv';
