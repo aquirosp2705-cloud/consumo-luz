@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v10</title>
+<title>Consumo Energía Pacífica v11</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -19,6 +19,7 @@ h2{font-size:18px;margin:0 0 12px;color:var(--azul)}
 label{font-weight:bold;font-size:12px;color:#374151;display:block;margin-bottom:4px}
 input,select{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;font-size:14px;background:var(--amarillo)}
 select{appearance:auto;-webkit-appearance:menulist;background-color:#fff2cc}
+input:disabled{background:#e5e7eb;color:#9ca3af}
 button{border:0;border-radius:10px;padding:10px 13px;font-weight:bold;cursor:pointer;background:var(--azul);color:white}
 button.sec{background:#64748b} button.danger{background:#b91c1c} button.good{background:#15803d} button.warn{background:#b45309}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -27,7 +28,7 @@ button.sec{background:#64748b} button.danger{background:#b91c1c} button.good{bac
 .kpi{background:var(--azul2);border:1px solid #cfe2f3;border-radius:12px;padding:12px;text-align:center}
 .kpi b{display:block;font-size:19px;color:var(--azul)} .kpi span{font-size:12px;color:#475569}
 .table-wrap{overflow:auto;border:1px solid var(--borde);border-radius:12px;background:white;max-height:68vh}
-table{border-collapse:collapse;width:100%;font-size:12px;min-width:1850px}
+table{border-collapse:collapse;width:100%;font-size:12px;min-width:1950px}
 th,td{border-bottom:1px solid #e5e7eb;border-right:1px solid #eef2f7;padding:7px;text-align:right;white-space:nowrap}
 th{position:sticky;top:0;background:var(--azul);color:white;z-index:2;text-align:center}
 td:first-child, th:first-child{position:sticky;left:0;z-index:3;text-align:left}
@@ -37,7 +38,12 @@ td:first-child{background:white;font-weight:bold}
 .editing{outline:3px solid #f59e0b}
 .cell-input{width:95px;min-width:80px;padding:6px;border:1px solid #cbd5e1;border-radius:7px;background:#fff2cc;text-align:right;font-size:12px}
 .cell-select{width:92px;min-width:82px;padding:6px;border:1px solid #cbd5e1;border-radius:7px;background:#fff2cc;font-size:12px}
+.cell-select.tipo{width:150px;min-width:140px}
 .cell-input:focus,.cell-select:focus{outline:2px solid #f59e0b}
+tr.independiente td.calc{background:#eef2f7;color:#94a3b8}
+tr.independiente td:first-child{background:#eef2f7}
+.dash{color:#94a3b8}
+.nuevo{color:#166534;font-weight:bold;font-size:11px}
 @media(max-width:1000px){.form-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}}
 </style>
 </head>
@@ -53,11 +59,13 @@ td:first-child{background:white;font-weight:bold}
   <div class="form-grid">
     <div><label>Mes</label><select id="month"></select></div>
     <div><label>Año</label><select id="year"></select></div>
+    <div><label>Tipo de línea</label><select id="tipo" onchange="ajustarFormularioTipo()"></select></div>
     <div><label>Total consumo $</label><input id="consumoDolares" type="text" inputmode="text" placeholder="Ej: 125.40+12.80"></div>
     <div><label>Impuestos $</label><input id="impuestos" type="text" inputmode="text" placeholder="Ej: 12.50+3.40"></div>
-    <div><label>Lectura</label><input id="lectura" type="text" inputmode="text" placeholder="Ej: 21903+820"></div>
-    <div><label>Inyectado mes kWh</label><input id="inyectadaMes" type="number" step="1"></div>
+    <div><label id="lblLectura">Lectura</label><input id="lectura" type="text" inputmode="text" placeholder="Ej: 21903+820"></div>
+    <div><label id="lblInyectada">Inyectado mes kWh</label><input id="inyectadaMes" type="text" inputmode="text"></div>
     <div><label>Subsidio $</label><input id="subsidio" type="text" inputmode="text" placeholder="Ej: 20+5.35"></div>
+    <div id="wrapConsumoManual" style="display:none"><label>Consumo mes kWh (planilla)</label><input id="consumoMesManual" type="text" inputmode="text" placeholder="Ej: 960"></div>
     <div><button id="btnGuardar" onclick="guardarPlanilla()">➕ Agregar</button></div>
   </div>
   <div class="actions">
@@ -69,8 +77,12 @@ td:first-child{background:white;font-weight:bold}
     <button class="danger" onclick="reiniciarDatos()">↩️ Restaurar histórico original</button>
   </div>
   <div class="notice">
-    Total consumo $, Impuestos $, Subsidio $ y Lectura aceptan operaciones: escribe por ejemplo <b>12.50+3.40</b> y presiona Enter o sal de la celda. 
+    Total consumo $, Impuestos $, Subsidio $ y Lectura aceptan operaciones: escribe por ejemplo <b>12.50+3.40</b> y presiona Enter o sal de la celda.
     Puedes editar directamente en la tabla o usar el botón <b>Editar</b> para cargar la fila arriba. Los datos se guardan automáticamente en este navegador.
+  </div>
+  <div class="notice">
+    <b>Tipo de línea:</b> <b>Normal</b> = mes corriente. <b>Medidor nuevo (1er mes)</b> = el mes en que cambiaron el medidor: no aplica la lectura anterior, el consumo kWh del mes se escribe a mano (celda amarilla) y la inyectada acumulada vuelve a empezar desde cero.
+    <b>Independiente (medidor anterior)</b> = línea libre sin fórmulas, para dejar constancia de los últimos valores del medidor viejo; no afecta a ningún otro mes.
   </div>
 </section>
 
@@ -120,10 +132,74 @@ td:first-child{background:white;font-weight:bold}
 </main>
 <script>
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
-const DATOS_INICIALES = [{"id": "hist_1", "year": 2022, "month": 7, "consumoDolares": 87.87, "impuestos": 32.82, "lectura": 5554.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_2", "year": 2022, "month": 8, "consumoDolares": 139.07, "impuestos": 49.92, "lectura": 6372.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_3", "year": 2022, "month": 9, "consumoDolares": 146.93, "impuestos": 52.55, "lectura": 7536.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_4", "year": 2022, "month": 10, "consumoDolares": 73.99, "impuestos": 28.21, "lectura": 8225.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_5", "year": 2022, "month": 11, "consumoDolares": 62.29, "impuestos": 24.34, "lectura": 8823.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_6", "year": 2022, "month": 12, "consumoDolares": 87.52, "impuestos": 32.63, "lectura": 9639.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_7", "year": 2023, "month": 1, "consumoDolares": 94.21, "impuestos": 36.65, "lectura": 10551.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_8", "year": 2023, "month": 2, "consumoDolares": 89.55, "impuestos": 34.78, "lectura": 11421.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_9", "year": 2023, "month": 3, "consumoDolares": 82.9, "impuestos": 32.08, "lectura": 12231.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_10", "year": 2023, "month": 4, "consumoDolares": 95.54, "impuestos": 37.19, "lectura": 13155.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_11", "year": 2023, "month": 5, "consumoDolares": 73.81, "impuestos": 28.4, "lectura": 13883.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_12", "year": 2023, "month": 6, "consumoDolares": 101.36, "impuestos": 38.96, "lectura": 14762.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_13", "year": 2023, "month": 7, "consumoDolares": 97.3, "impuestos": 37.36, "lectura": 101.0, "inyectadaMes": 0.0, "subsidio": 0.0}, {"id": "hist_14", "year": 2023, "month": 8, "consumoDolares": 49.28, "impuestos": 20.16, "lectura": 597.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_15", "year": 2023, "month": 9, "consumoDolares": 49.18, "impuestos": 20.13, "lectura": 1092.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_16", "year": 2023, "month": 10, "consumoDolares": 44.35, "impuestos": 18.56, "lectura": 1541.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_17", "year": 2023, "month": 11, "consumoDolares": 48.55, "impuestos": 19.93, "lectura": 2030.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_18", "year": 2023, "month": 12, "consumoDolares": 61.25, "impuestos": 24.07, "lectura": 2640.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_19", "year": 2024, "month": 1, "consumoDolares": 74.47, "impuestos": 28.43, "lectura": 3374.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_20", "year": 2024, "month": 2, "consumoDolares": 59.26, "impuestos": 22.61, "lectura": 3965.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_21", "year": 2024, "month": 3, "consumoDolares": 77.35, "impuestos": 29.14, "lectura": 4725.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_22", "year": 2024, "month": 4, "consumoDolares": 72.47, "impuestos": 27.71, "lectura": 5441.0, "inyectadaMes": 80.0, "subsidio": 0.0}, {"id": "hist_23", "year": 2024, "month": 5, "consumoDolares": 90.95, "impuestos": 31.64, "lectura": 6242.0, "inyectadaMes": 80.0, "subsidio": 45.03}, {"id": "hist_24", "year": 2024, "month": 6, "consumoDolares": 68.46, "impuestos": 25.07, "lectura": 6888.0, "inyectadaMes": 80.0, "subsidio": 34.23}, {"id": "hist_25", "year": 2024, "month": 7, "consumoDolares": 47.71, "impuestos": 18.23, "lectura": 7369.0, "inyectadaMes": 80.0, "subsidio": 23.86}, {"id": "hist_26", "year": 2024, "month": 8, "consumoDolares": 53.17, "impuestos": 20.48, "lectura": 7896.0, "inyectadaMes": 80.0, "subsidio": 26.59}, {"id": "hist_27", "year": 2024, "month": 9, "consumoDolares": 60.37, "impuestos": 22.9, "lectura": 8479.0, "inyectadaMes": 80.0, "subsidio": 30.9}, {"id": "hist_28", "year": 2024, "month": 10, "consumoDolares": 81.2, "impuestos": 29.06, "lectura": 9219.0, "inyectadaMes": 80.0, "subsidio": 40.6}, {"id": "hist_29", "year": 2024, "month": 11, "consumoDolares": 74.25, "impuestos": 18.68, "lectura": 9951.0, "inyectadaMes": 80.0, "subsidio": 28.31}, {"id": "hist_30", "year": 2024, "month": 12, "consumoDolares": 97.43, "impuestos": 36.8, "lectura": 10892.0, "inyectadaMes": 80.0, "subsidio": 48.72}, {"id": "hist_31", "year": 2025, "month": 1, "consumoDolares": 79.79, "impuestos": 29.83, "lectura": 11674.0, "inyectadaMes": 101.0, "subsidio": 40.61}, {"id": "hist_32", "year": 2025, "month": 2, "consumoDolares": 62.72, "impuestos": 23.71, "lectura": 12298.0, "inyectadaMes": 126.0, "subsidio": 31.36}, {"id": "hist_33", "year": 2025, "month": 3, "consumoDolares": 72.03, "impuestos": 26.92, "lectura": 13010.0, "inyectadaMes": 158.0, "subsidio": 36.02}, {"id": "hist_34", "year": 2025, "month": 4, "consumoDolares": 65.03, "impuestos": 24.26, "lectura": 13656.0, "inyectadaMes": 124.0, "subsidio": 32.52}, {"id": "hist_35", "year": 2025, "month": 5, "consumoDolares": 66.79, "impuestos": 24.72, "lectura": 14289.0, "inyectadaMes": 98.0, "subsidio": 33.4}, {"id": "hist_36", "year": 2025, "month": 6, "consumoDolares": 59.98, "impuestos": 22.15, "lectura": 14869.0, "inyectadaMes": 87.0, "subsidio": 29.99}, {"id": "hist_37", "year": 2025, "month": 7, "consumoDolares": 52.27, "impuestos": 20.31, "lectura": 15389.0, "inyectadaMes": 111.0, "subsidio": 26.14}, {"id": "hist_38", "year": 2025, "month": 8, "consumoDolares": 56.25, "impuestos": 21.26, "lectura": 15940.0, "inyectadaMes": 94.0, "subsidio": 28.13}, {"id": "hist_39", "year": 2025, "month": 9, "consumoDolares": 64.86, "impuestos": 24.26, "lectura": 16558.0, "inyectadaMes": 101.0, "subsidio": 32.43}, {"id": "hist_40", "year": 2025, "month": 10, "consumoDolares": 71.03, "impuestos": 25.73, "lectura": 17224.0, "inyectadaMes": 123.0, "subsidio": 35.52}, {"id": "hist_41", "year": 2025, "month": 11, "consumoDolares": 73.53, "impuestos": 21.5, "lectura": 17854.0, "inyectadaMes": 92.0, "subsidio": 31.68}, {"id": "hist_42", "year": 2025, "month": 12, "consumoDolares": 83.79, "impuestos": 24.5, "lectura": 18672.0, "inyectadaMes": 109.0, "subsidio": 42.61}, {"id": "hist_43", "year": 2026, "month": 1, "consumoDolares": 105.19, "impuestos": 14.99, "lectura": 19362.0, "inyectadaMes": 80.0, "subsidio": 35.54}, {"id": "hist_44", "year": 2026, "month": 2, "consumoDolares": 108.59, "impuestos": 15.53, "lectura": 20073.0, "inyectadaMes": 102.0, "subsidio": 36.67}, {"id": "hist_45", "year": 2026, "month": 3, "consumoDolares": 159.23, "impuestos": 22.94, "lectura": 21083.0, "inyectadaMes": 150.0, "subsidio": 53.55}, {"id": "hist_46", "year": 2026, "month": 4, "consumoDolares": 126.73, "impuestos": 20.57, "lectura": 21903.0, "inyectadaMes": 123.0, "subsidio": 42.72}];
+// Tipos de línea:
+//  normal  = mes corriente (lectura anterior = lectura del mes previo).
+//  cambio  = primer mes del medidor nuevo: sin lectura anterior, consumo kWh manual, inyectada acumulada reinicia.
+//  cierre  = línea independiente sin fórmulas: guarda los últimos valores del medidor anterior y no afecta a nadie.
+const TIPOS = { normal:'Normal', cambio:'Medidor nuevo (1er mes)', cierre:'Independiente (medidor anterior)' };
+const CAMPOS_NUMERICOS = ['consumoDolares','impuestos','lectura','inyectadaMes','subsidio','consumoMesManual','lecturaAnterior','consumoMes','inyectadaAcum'];
+const CIERRE_2026_07 = {"id":"cierre_2026_07","year":2026,"month":7,"tipo":"cierre","lecturaAnterior":27751,"lectura":0,"consumoMes":0,"inyectadaAcum":4275,"inyectadaMes":0,"consumoDolares":0,"impuestos":0,"subsidio":0};
+const DATOS_INICIALES = [
+  {"id": "hist_1", "year": 2022, "month": 7, "tipo": "normal", "consumoDolares": 153.51, "impuestos": 32.82, "lectura": 5554, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_2", "year": 2022, "month": 8, "tipo": "normal", "consumoDolares": 238.91, "impuestos": 49.92, "lectura": 6372, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_3", "year": 2022, "month": 9, "tipo": "normal", "consumoDolares": 252.03, "impuestos": 52.55, "lectura": 7536, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_4", "year": 2022, "month": 10, "tipo": "normal", "consumoDolares": 130.41, "impuestos": 28.21, "lectura": 8225, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_5", "year": 2022, "month": 11, "tipo": "normal", "consumoDolares": 110.97, "impuestos": 24.34, "lectura": 8823, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_6", "year": 2022, "month": 12, "tipo": "normal", "consumoDolares": 152.78, "impuestos": 32.63, "lectura": 9639, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_7", "year": 2023, "month": 1, "tipo": "normal", "consumoDolares": 167.51, "impuestos": 36.65, "lectura": 10551, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_8", "year": 2023, "month": 2, "tipo": "normal", "consumoDolares": 159.11, "impuestos": 34.78, "lectura": 11421, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_9", "year": 2023, "month": 3, "tipo": "normal", "consumoDolares": 147.06, "impuestos": 32.08, "lectura": 12231, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_10", "year": 2023, "month": 4, "tipo": "normal", "consumoDolares": 169.92, "impuestos": 37.19, "lectura": 13155, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_11", "year": 2023, "month": 5, "tipo": "normal", "consumoDolares": 130.61, "impuestos": 28.4, "lectura": 13883, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_12", "year": 2023, "month": 6, "tipo": "normal", "consumoDolares": 179.28, "impuestos": 38.96, "lectura": 14762, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_13", "year": 2023, "month": 7, "tipo": "normal", "consumoDolares": 172.02, "impuestos": 37.36, "lectura": 101, "inyectadaMes": 0, "subsidio": 0},
+  {"id": "hist_14", "year": 2023, "month": 8, "tipo": "normal", "consumoDolares": 89.6, "impuestos": 20.16, "lectura": 597, "inyectadaMes": 80, "subsidio": 0},
+  {"id": "hist_15", "year": 2023, "month": 9, "tipo": "normal", "consumoDolares": 89.44, "impuestos": 20.13, "lectura": 1092, "inyectadaMes": 80, "subsidio": 0},
+  {"id": "hist_16", "year": 2023, "month": 10, "tipo": "normal", "consumoDolares": 81.47, "impuestos": 18.56, "lectura": 1541, "inyectadaMes": 80, "subsidio": 0},
+  {"id": "hist_17", "year": 2023, "month": 11, "tipo": "normal", "consumoDolares": 88.41, "impuestos": 19.93, "lectura": 2030, "inyectadaMes": 80, "subsidio": 0},
+  {"id": "hist_18", "year": 2023, "month": 12, "tipo": "normal", "consumoDolares": 109.39, "impuestos": 24.07, "lectura": 2640, "inyectadaMes": 80, "subsidio": 0},
+  {"id": "hist_19", "year": 2024, "month": 1, "tipo": "normal", "consumoDolares": 131.33, "impuestos": 28.43, "lectura": 3374, "inyectadaMes": 80, "subsidio": 0},
+  {"id": "hist_20", "year": 2024, "month": 2, "tipo": "normal", "consumoDolares": 104.48, "impuestos": 22.61, "lectura": 3965, "inyectadaMes": 80, "subsidio": 0},
+  {"id": "hist_21", "year": 2024, "month": 3, "tipo": "normal", "consumoDolares": 135.63, "impuestos": 29.14, "lectura": 4725, "inyectadaMes": 80, "subsidio": 0},
+  {"id": "hist_22", "year": 2024, "month": 4, "tipo": "normal", "consumoDolares": 127.89, "impuestos": 27.71, "lectura": 5441, "inyectadaMes": 80, "subsidio": 0},
+  {"id": "hist_23", "year": 2024, "month": 5, "tipo": "normal", "consumoDolares": 154.23, "impuestos": 31.64, "lectura": 6242, "inyectadaMes": 80, "subsidio": 45.03},
+  {"id": "hist_24", "year": 2024, "month": 6, "tipo": "normal", "consumoDolares": 118.6, "impuestos": 25.07, "lectura": 6888, "inyectadaMes": 80, "subsidio": 34.23},
+  {"id": "hist_25", "year": 2024, "month": 7, "tipo": "normal", "consumoDolares": 84.17, "impuestos": 18.23, "lectura": 7369, "inyectadaMes": 80, "subsidio": 23.86},
+  {"id": "hist_26", "year": 2024, "month": 8, "tipo": "normal", "consumoDolares": 94.13, "impuestos": 20.48, "lectura": 7896, "inyectadaMes": 80, "subsidio": 26.59},
+  {"id": "hist_27", "year": 2024, "month": 9, "tipo": "normal", "consumoDolares": 106.17, "impuestos": 22.9, "lectura": 8479, "inyectadaMes": 80, "subsidio": 30.9},
+  {"id": "hist_28", "year": 2024, "month": 10, "tipo": "normal", "consumoDolares": 139.32, "impuestos": 29.06, "lectura": 9219, "inyectadaMes": 80, "subsidio": 40.6},
+  {"id": "hist_29", "year": 2024, "month": 11, "tipo": "normal", "consumoDolares": 111.61, "impuestos": 18.68, "lectura": 9951, "inyectadaMes": 80, "subsidio": 28.31},
+  {"id": "hist_30", "year": 2024, "month": 12, "tipo": "normal", "consumoDolares": 171.03, "impuestos": 36.8, "lectura": 10892, "inyectadaMes": 80, "subsidio": 48.72},
+  {"id": "hist_31", "year": 2025, "month": 1, "tipo": "normal", "consumoDolares": 139.45, "impuestos": 29.83, "lectura": 11674, "inyectadaMes": 101, "subsidio": 40.61},
+  {"id": "hist_32", "year": 2025, "month": 2, "tipo": "normal", "consumoDolares": 110.14, "impuestos": 23.71, "lectura": 12298, "inyectadaMes": 126, "subsidio": 31.36},
+  {"id": "hist_33", "year": 2025, "month": 3, "tipo": "normal", "consumoDolares": 125.87, "impuestos": 26.92, "lectura": 13010, "inyectadaMes": 158, "subsidio": 36.02},
+  {"id": "hist_34", "year": 2025, "month": 4, "tipo": "normal", "consumoDolares": 113.55, "impuestos": 24.26, "lectura": 13656, "inyectadaMes": 124, "subsidio": 32.52},
+  {"id": "hist_35", "year": 2025, "month": 5, "tipo": "normal", "consumoDolares": 116.23, "impuestos": 24.72, "lectura": 14289, "inyectadaMes": 98, "subsidio": 33.4},
+  {"id": "hist_36", "year": 2025, "month": 6, "tipo": "normal", "consumoDolares": 104.28, "impuestos": 22.15, "lectura": 14869, "inyectadaMes": 87, "subsidio": 29.99},
+  {"id": "hist_37", "year": 2025, "month": 7, "tipo": "normal", "consumoDolares": 92.89, "impuestos": 20.31, "lectura": 15389, "inyectadaMes": 111, "subsidio": 26.14},
+  {"id": "hist_38", "year": 2025, "month": 8, "tipo": "normal", "consumoDolares": 91.8, "impuestos": 21.26, "lectura": 15940, "inyectadaMes": 94, "subsidio": 28.13},
+  {"id": "hist_39", "year": 2025, "month": 9, "tipo": "normal", "consumoDolares": 105.46, "impuestos": 24.26, "lectura": 16558, "inyectadaMes": 101, "subsidio": 32.43},
+  {"id": "hist_40", "year": 2025, "month": 10, "tipo": "normal", "consumoDolares": 114.57, "impuestos": 25.73, "lectura": 17224, "inyectadaMes": 123, "subsidio": 35.52},
+  {"id": "hist_41", "year": 2025, "month": 11, "tipo": "normal", "consumoDolares": 108.72, "impuestos": 21.5, "lectura": 17854, "inyectadaMes": 92, "subsidio": 31.68},
+  {"id": "hist_42", "year": 2025, "month": 12, "tipo": "normal", "consumoDolares": 132.79, "impuestos": 24.5, "lectura": 18672, "inyectadaMes": 109, "subsidio": 42.61},
+  {"id": "hist_43", "year": 2026, "month": 1, "tipo": "normal", "consumoDolares": 105.5, "impuestos": 14.99, "lectura": 19362, "inyectadaMes": 80, "subsidio": 35.54},
+  {"id": "hist_44", "year": 2026, "month": 2, "tipo": "normal", "consumoDolares": 108.59, "impuestos": 15.53, "lectura": 20073, "inyectadaMes": 102, "subsidio": 36.67},
+  {"id": "hist_45", "year": 2026, "month": 3, "tipo": "normal", "consumoDolares": 159.23, "impuestos": 22.94, "lectura": 21083, "inyectadaMes": 150, "subsidio": 53.55},
+  {"id": "hist_46", "year": 2026, "month": 4, "tipo": "normal", "consumoDolares": 126.73, "impuestos": 20.57, "lectura": 21903, "inyectadaMes": 123, "subsidio": 42.72},
+  {"id": "m_1781052238900", "year": 2026, "month": 5, "tipo": "normal", "consumoDolares": 136.5, "impuestos": 24.75, "lectura": 22683, "inyectadaMes": 95, "subsidio": 44.21},
+  {"id": "m_1783448213661", "year": 2026, "month": 6, "tipo": "normal", "consumoDolares": 134.05, "impuestos": 19.89, "lectura": 23476, "inyectadaMes": 94, "subsidio": 45.16},
+  {"id": "cierre_2026_07", "year": 2026, "month": 7, "tipo": "cierre", "lecturaAnterior": 27751, "lectura": 0, "consumoMes": 0, "inyectadaAcum": 4275, "inyectadaMes": 0, "consumoDolares": 0, "impuestos": 0, "subsidio": 0},
+  {"id": "m_1786458170253", "year": 2026, "month": 7, "tipo": "cambio", "consumoDolares": 160.32, "impuestos": 28.61, "lectura": 564, "inyectadaMes": 69, "subsidio": 52.26, "consumoMesManual": 960},
+  {"id": "m_1788711415099", "year": 2026, "month": 8, "tipo": "normal", "consumoDolares": 159.05, "impuestos": 24.29, "lectura": 1472, "inyectadaMes": 100, "subsidio": 53.49}
+];
 const STORAGE_KEY = 'energiaPacificaDatosV10';
+const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
+const VERSION_APP = 11;
 let datos = [];
 let editId = null;
+
+function tipoDe(d){ return (d && (d.tipo==='cierre' || d.tipo==='cambio')) ? d.tipo : 'normal'; }
+function esCierre(d){ return tipoDe(d)==='cierre'; }
 
 function llenarSelects() {
   const monthSel = document.getElementById('month');
@@ -136,12 +212,18 @@ function llenarSelects() {
   const hoy = new Date();
   monthSel.value = hoy.getMonth()+1;
   yearSel.value = hoy.getFullYear();
+  document.getElementById('tipo').innerHTML = opcionesTipo('normal');
 }
 
-function periodoTexto(r) { return MESES[Number(r.month)-1] + ' ' + r.year; }
+function periodoTexto(r) {
+  const base = MESES[Number(r.month)-1] + ' ' + r.year;
+  return esCierre(r) ? base + ' · medidor anterior' : base;
+}
 function periodoKey(r) { return Number(r.year)*100 + Number(r.month); }
-function ordenarCronologico(arr) { return arr.slice().sort((a,b)=>periodoKey(a)-periodoKey(b)); }
-function ordenarReciente(arr) { return arr.slice().sort((a,b)=>periodoKey(b)-periodoKey(a)); }
+// La línea independiente (cierre) va antes que la normal del mismo mes.
+function ordenKey(r) { return periodoKey(r)*10 + (esCierre(r) ? 0 : 1); }
+function ordenarCronologico(arr) { return arr.slice().sort((a,b)=>ordenKey(a)-ordenKey(b)); }
+function ordenarReciente(arr) { return arr.slice().sort((a,b)=>ordenKey(b)-ordenKey(a)); }
 
 function evaluarSuma(valor) {
   const texto = String(valor ?? '').trim();
@@ -160,11 +242,13 @@ function evaluarSuma(valor) {
 }
 function normalizarCampoSuma(id){
   const campo = document.getElementById(id);
-  const nombres = { consumoDolares:'Total consumo', impuestos:'Impuestos', subsidio:'Subsidio', lectura:'Lectura' };
+  if(campo.disabled) { campo.value = ''; return true; }
+  const nombres = { consumoDolares:'Total consumo', impuestos:'Impuestos', subsidio:'Subsidio', lectura:'Lectura', inyectadaMes:'Inyectado', consumoMesManual:'Consumo mes kWh' };
+  const enteros = ['lectura','inyectadaMes','consumoMesManual'];
   try {
     const total = evaluarSuma(campo.value);
     if(isNaN(total)) throw new Error('Valor inválido');
-    campo.value = total ? (id === 'lectura' ? String(Number(total.toFixed(2))) : total.toFixed(2)) : '';
+    campo.value = total ? (enteros.includes(id) ? String(Number(total.toFixed(2))) : total.toFixed(2)) : '';
     return true;
   } catch(e) {
     alert('En ' + (nombres[id] || 'este campo') + ' solo ingresa números con + o -. Ejemplo: 12.50+3.40');
@@ -173,7 +257,7 @@ function normalizarCampoSuma(id){
   }
 }
 function activarSumasConEnter(){
-  ['consumoDolares','impuestos','subsidio','lectura'].forEach(id => {
+  ['consumoDolares','impuestos','subsidio','lectura','inyectadaMes','consumoMesManual'].forEach(id => {
     const campo = document.getElementById(id);
     campo.addEventListener('keydown', function(e){
       if(e.key === 'Enter') {
@@ -195,6 +279,7 @@ function num(v){
     return isNaN(n) ? 0 : n;
   }
 }
+function tieneValor(v){ return v !== undefined && v !== null && String(v).trim() !== ''; }
 function div(a,b){ return Math.abs(Number(b)||0) < 0.000001 ? 0 : Number(a||0)/Number(b||0); }
 function money(v){ return Number(v||0).toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2}); }
 function qty(v){ return Number(v||0).toLocaleString('es-EC',{minimumFractionDigits:0,maximumFractionDigits:0}); }
@@ -204,21 +289,42 @@ function pct(v){ return (Number(v||0)*100).toLocaleString('es-EC',{minimumFracti
 function calcular(){
   const base = ordenarCronologico(datos);
   let acumInyectada = 0;
-  return base.map((d, i) => {
-    const prev = i > 0 ? base[i-1] : null;
+  let prev = null; // última línea con fórmulas (las independientes no cuentan como mes anterior)
+  return base.map(d => {
+    const tipo = tipoDe(d);
+    if(tipo === 'cierre'){
+      // Línea independiente: se muestran tal cual los valores escritos, sin fórmulas.
+      return {
+        ...d, tipo,
+        periodo: periodoTexto(d),
+        lecturaAnterior: num(d.lecturaAnterior),
+        lectura: num(d.lectura),
+        consumoMes: num(d.consumoMes),
+        inyectadaAcum: num(d.inyectadaAcum),
+        inyectadaMes: num(d.inyectadaMes)
+      };
+    }
+    const esCambio = tipo === 'cambio';
     const consumoDolares = num(d.consumoDolares);
     const impuestos = num(d.impuestos);
     const lectura = num(d.lectura);
     const inyectadaMes = num(d.inyectadaMes);
     const subsidio = num(d.subsidio);
-    const lecturaAnterior = prev ? num(prev.lectura) : 0;
-    const consumoMes = prev ? lectura - lecturaAnterior : 0;
-    acumInyectada += inyectadaMes;
+    const lecturaAnterior = (esCambio || !prev) ? 0 : num(prev.lectura);
+    let consumoMes;
+    if(esCambio) {
+      // Medidor nuevo: no hay lectura anterior comparable; el consumo del mes viene de la planilla.
+      consumoMes = tieneValor(d.consumoMesManual) ? num(d.consumoMesManual) : lectura;
+    } else {
+      consumoMes = prev ? lectura - lecturaAnterior : 0;
+    }
+    acumInyectada = esCambio ? inyectadaMes : acumInyectada + inyectadaMes;
     const totalSinSubsidio = consumoDolares - impuestos;
     const valorFactura = totalSinSubsidio - subsidio;
     const consumoSinSolar = consumoMes + inyectadaMes;
+    prev = d;
     return {
-      ...d,
+      ...d, tipo,
       periodo: periodoTexto(d),
       lecturaAnterior,
       consumoMes,
@@ -240,15 +346,33 @@ function calcular(){
   });
 }
 
+// Inserta la línea independiente de julio 2026 y marca julio 2026 como medidor nuevo si aún no está hecho.
+function insertarCambioMedidor2026(){
+  const yaCierre = datos.some(d => esCierre(d) && Number(d.year)===2026 && Number(d.month)===7);
+  const jul = datos.find(d => !esCierre(d) && Number(d.year)===2026 && Number(d.month)===7);
+  if(!jul || yaCierre) return false;
+  datos.push(JSON.parse(JSON.stringify(CIERRE_2026_07)));
+  jul.tipo = 'cambio';
+  if(!tieneValor(jul.consumoMesManual)) jul.consumoMesManual = 960;
+  return true;
+}
+
 function cargarDatos(){
+  let desdeGuardado = false;
   try {
     const guardado = localStorage.getItem(STORAGE_KEY);
     datos = guardado ? JSON.parse(guardado) : JSON.parse(JSON.stringify(DATOS_INICIALES));
-    if(!Array.isArray(datos) || datos.length===0) datos = JSON.parse(JSON.stringify(DATOS_INICIALES));
+    desdeGuardado = !!guardado;
+    if(!Array.isArray(datos) || datos.length===0) { datos = JSON.parse(JSON.stringify(DATOS_INICIALES)); desdeGuardado = false; }
   } catch(e) {
     datos = JSON.parse(JSON.stringify(DATOS_INICIALES));
   }
-  recalcularYRenderizar(false);
+  let guardar = false;
+  if(desdeGuardado && !localStorage.getItem(MIGRACION_KEY)) {
+    guardar = insertarCambioMedidor2026();
+    localStorage.setItem(MIGRACION_KEY, '1');
+  }
+  recalcularYRenderizar(guardar);
 }
 function guardarLocal(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(datos));
@@ -257,7 +381,7 @@ function guardarLocal(){
 function poblarResumen(calc){
   const sel = document.getElementById('resumenSelect');
   const actual = sel.value;
-  const recientes = ordenarReciente(calc);
+  const recientes = ordenarReciente(calc).filter(r => !esCierre(r));
   sel.innerHTML = recientes.map(r => `<option value="${r.id}">${r.periodo}</option>`).join('');
   if(actual && recientes.some(r=>r.id===actual)) sel.value = actual;
   else if(recientes[0]) sel.value = recientes[0].id;
@@ -265,7 +389,8 @@ function poblarResumen(calc){
 
 function renderResumenSeleccionado(){
   const id = document.getElementById('resumenSelect').value;
-  const r = calcular().find(x=>x.id===id) || calcular().slice(-1)[0];
+  const calc = calcular().filter(r => !esCierre(r));
+  const r = calc.find(x=>x.id===id) || calc.slice(-1)[0];
   if(!r) return;
   document.getElementById('kpiConsumo').textContent = qty(r.consumoMes);
   document.getElementById('kpiCosto').textContent = '$ ' + dec(r.costoKwConImpuestos);
@@ -283,37 +408,86 @@ function opcionesYear(selected){
   for(let y=2022; y<=Math.max(2032, yActual+3); y++) years.push(y);
   return years.map(y=>`<option value="${y}" ${Number(selected)===y?'selected':''}>${y}</option>`).join('');
 }
+function opcionesTipo(selected){
+  return Object.keys(TIPOS).map(t=>`<option value="${t}" ${selected===t?'selected':''}>${TIPOS[t]}</option>`).join('');
+}
 function valorInput(v, decimales=2){
   const n = Number(v||0);
   if(decimales===0) return String(Math.round(n));
   return Number(n.toFixed(decimales)).toString();
 }
-function inputLinea(id, campo, valor, decimales=2){
-  return `<input class="cell-input" type="text" inputmode="text" value="${valorInput(valor, decimales)}" data-id="${id}" data-campo="${campo}" onkeydown="teclaLinea(event,this)" onblur="guardarCampoLinea(this)">`;
+function inputLinea(id, campo, valor, decimales=2, vacioSiCero=false){
+  const texto = (vacioSiCero && !Number(valor||0)) ? '' : valorInput(valor, decimales);
+  return `<input class="cell-input" type="text" inputmode="text" value="${texto}" data-id="${id}" data-campo="${campo}" onkeydown="teclaLinea(event,this)" onblur="guardarCampoLinea(this)">`;
 }
 function renderTabla(rows){
   const headers = [
-    'Mes','Año','Consumo $','Impuestos $','Total sin subsidio $','% impuestos',
+    'Mes','Año','Tipo de línea','Consumo $','Impuestos $','Total sin subsidio $','% impuestos',
     'Lectura anterior','Lectura actual','Consumo mes kWh',
     '$/kWh consumo','$/kWh con impuestos','Energía total',
     'Inyectada acum.','Inyectada mes','% inyectada',
     'Neto consumo','Consumo sin solar','Prom. día',
     'Subsidio $','% subsidio','Total factura $','Factura $/kWh','Acción'
   ];
+  const dash = '<span class="dash">—</span>';
   let html = '<thead><tr>' + headers.map(h=>'<th>'+h+'</th>').join('') + '</tr></thead><tbody>';
   rows.forEach(r => {
-    const neg = r.consumoMes < 0 ? ' neg' : '';
-    const editingClass = r.id === editId ? ' class="editing"' : '';
-    html += `<tr${editingClass}>
+    const clases = [];
+    if(r.id === editId) clases.push('editing');
+    if(esCierre(r)) clases.push('independiente');
+    const trClass = clases.length ? ` class="${clases.join(' ')}"` : '';
+    const celdasComunes = `
       <td><select class="cell-select" data-id="${r.id}" data-campo="month" onchange="guardarCampoLinea(this)">${opcionesMes(r.month)}</select></td>
       <td><select class="cell-select" data-id="${r.id}" data-campo="year" onchange="guardarCampoLinea(this)">${opcionesYear(r.year)}</select></td>
+      <td><select class="cell-select tipo" data-id="${r.id}" data-campo="tipo" onchange="guardarCampoLinea(this)">${opcionesTipo(tipoDe(r))}</select></td>`;
+    const acciones = `
+      <td>
+        <button class="warn" onclick="editarFila('${r.id}')">Editar arriba</button>
+        <button class="danger" onclick="eliminarFila('${r.id}')">Eliminar</button>
+      </td>`;
+    if(esCierre(r)) {
+      // Línea independiente: solo celdas libres (amarillas) en los kWh; el resto vacío.
+      html += `<tr${trClass}>${celdasComunes}
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="inputcol">${inputLinea(r.id,'lecturaAnterior',r.lecturaAnterior,0,true)}</td>
+      <td class="inputcol">${inputLinea(r.id,'lectura',r.lectura,0,true)}</td>
+      <td class="inputcol">${inputLinea(r.id,'consumoMes',r.consumoMes,0,true)}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="inputcol">${inputLinea(r.id,'inyectadaAcum',r.inyectadaAcum,0,true)}</td>
+      <td class="inputcol">${inputLinea(r.id,'inyectadaMes',r.inyectadaMes,0,true)}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
+      ${acciones}
+    </tr>`;
+      return;
+    }
+    const esCambio = tipoDe(r) === 'cambio';
+    const neg = r.consumoMes < 0 ? ' neg' : '';
+    const celdaLecturaAnterior = esCambio
+      ? `<td class="calc"><span class="nuevo">medidor nuevo</span></td>`
+      : `<td class="calc">${qty(r.lecturaAnterior)}</td>`;
+    const celdaConsumoMes = esCambio
+      ? `<td class="inputcol">${inputLinea(r.id,'consumoMesManual',r.consumoMes,0)}</td>`
+      : `<td class="calc${neg}">${qty(r.consumoMes)}</td>`;
+    html += `<tr${trClass}>${celdasComunes}
       <td class="inputcol">${inputLinea(r.id,'consumoDolares',r.consumoDolares,2)}</td>
       <td class="inputcol">${inputLinea(r.id,'impuestos',r.impuestos,2)}</td>
       <td class="calc">$ ${money(r.totalSinSubsidio)}</td>
       <td class="calc">${pct(r.pctImpuestos)}</td>
-      <td class="calc">${qty(r.lecturaAnterior)}</td>
+      ${celdaLecturaAnterior}
       <td class="inputcol">${inputLinea(r.id,'lectura',r.lectura,0)}</td>
-      <td class="calc${neg}">${qty(r.consumoMes)}</td>
+      ${celdaConsumoMes}
       <td class="calc">$ ${dec(r.costoKw)}</td>
       <td class="calc">$ ${dec(r.costoKwConImpuestos)}</td>
       <td class="calc">${qty(r.energiaTotal)}</td>
@@ -327,10 +501,7 @@ function renderTabla(rows){
       <td class="calc">${pct(r.pctSubsidio)}</td>
       <td class="calc">$ ${money(r.valorFactura)}</td>
       <td class="calc">$ ${dec(r.facturaKw)}</td>
-      <td>
-        <button class="warn" onclick="editarFila('${r.id}')">Editar arriba</button>
-        <button class="danger" onclick="eliminarFila('${r.id}')">Eliminar</button>
-      </td>
+      ${acciones}
     </tr>`;
   });
   html += '</tbody>';
@@ -350,7 +521,7 @@ function guardarCampoLinea(el){
   const d = datos.find(x=>x.id===id);
   if(!d || !campo) return;
   let valor = el.value;
-  if(['consumoDolares','impuestos','lectura','inyectadaMes','subsidio'].includes(campo)){
+  if(CAMPOS_NUMERICOS.includes(campo)){
     const total = evaluarSuma(valor);
     if(isNaN(total)){
       alert('Operación inválida. Usa números con + o -. Ejemplo: 12.50+3.40');
@@ -360,6 +531,9 @@ function guardarCampoLinea(el){
     d[campo] = total;
   } else if(campo === 'month' || campo === 'year') {
     d[campo] = Number(valor);
+  } else if(campo === 'tipo') {
+    d.tipo = (valor === 'cierre' || valor === 'cambio') ? valor : 'normal';
+    if(d.tipo === 'cambio' && !tieneValor(d.consumoMesManual)) d.consumoMesManual = num(d.lectura);
   }
   recalcularYRenderizar(true);
 }
@@ -373,11 +547,28 @@ function recalcularYRenderizar(save=true){
   if(save) guardarLocal();
 }
 
+// Ajusta el formulario de arriba según el tipo de línea elegido.
+function ajustarFormularioTipo(){
+  const tipo = document.getElementById('tipo').value;
+  const cierre = tipo === 'cierre';
+  ['consumoDolares','impuestos','subsidio'].forEach(id => {
+    const campo = document.getElementById(id);
+    campo.disabled = cierre;
+    if(cierre) campo.value = '';
+  });
+  document.getElementById('lblLectura').textContent = cierre ? 'Lectura medidor anterior' : 'Lectura';
+  document.getElementById('lblInyectada').textContent = cierre ? 'Inyectada acum. medidor anterior' : 'Inyectado mes kWh';
+  document.getElementById('wrapConsumoManual').style.display = tipo === 'cambio' ? '' : 'none';
+  if(tipo !== 'cambio') document.getElementById('consumoMesManual').value = '';
+}
+
 function limpiarFormulario(){
-  ['consumoDolares','impuestos','lectura','inyectadaMes','subsidio'].forEach(id=>document.getElementById(id).value='');
+  ['consumoDolares','impuestos','lectura','inyectadaMes','subsidio','consumoMesManual'].forEach(id=>document.getElementById(id).value='');
   const hoy = new Date();
   document.getElementById('month').value = hoy.getMonth()+1;
   document.getElementById('year').value = hoy.getFullYear();
+  document.getElementById('tipo').value = 'normal';
+  ajustarFormularioTipo();
 }
 function cancelarEdicion(){
   editId = null;
@@ -388,27 +579,50 @@ function cancelarEdicion(){
 }
 
 function guardarPlanilla(){
+  const tipo = document.getElementById('tipo').value;
+  const cierre = tipo === 'cierre';
   if(!normalizarCampoSuma('consumoDolares')) return;
   if(!normalizarCampoSuma('impuestos')) return;
   if(!normalizarCampoSuma('subsidio')) return;
   if(!normalizarCampoSuma('lectura')) return;
+  if(!normalizarCampoSuma('inyectadaMes')) return;
+  if(tipo === 'cambio' && !normalizarCampoSuma('consumoMesManual')) return;
   const month = Number(document.getElementById('month').value);
   const year = Number(document.getElementById('year').value);
   const lectura = num(document.getElementById('lectura').value);
   if(!month || !year) { alert('Elige mes y año.'); return; }
-  if(lectura <= 0) { alert('Ingresa la lectura actual.'); return; }
+  if(!cierre && lectura <= 0) { alert('Ingresa la lectura actual.'); return; }
 
-  const registro = {
-    id: editId || ('m_' + Date.now()),
-    year, month,
-    consumoDolares: num(document.getElementById('consumoDolares').value),
-    impuestos: num(document.getElementById('impuestos').value),
-    lectura,
-    inyectadaMes: num(document.getElementById('inyectadaMes').value),
-    subsidio: num(document.getElementById('subsidio').value)
-  };
+  let registro;
+  if(cierre) {
+    const existente = editId ? datos.find(d=>d.id===editId) : null;
+    registro = {
+      id: editId || ('m_' + Date.now()),
+      year, month, tipo:'cierre',
+      lecturaAnterior: lectura,
+      lectura: existente ? num(existente.lectura) : 0,
+      consumoMes: existente ? num(existente.consumoMes) : 0,
+      inyectadaAcum: num(document.getElementById('inyectadaMes').value),
+      inyectadaMes: existente ? num(existente.inyectadaMes) : 0,
+      consumoDolares: 0, impuestos: 0, subsidio: 0
+    };
+  } else {
+    registro = {
+      id: editId || ('m_' + Date.now()),
+      year, month, tipo: tipo === 'cambio' ? 'cambio' : 'normal',
+      consumoDolares: num(document.getElementById('consumoDolares').value),
+      impuestos: num(document.getElementById('impuestos').value),
+      lectura,
+      inyectadaMes: num(document.getElementById('inyectadaMes').value),
+      subsidio: num(document.getElementById('subsidio').value)
+    };
+    if(tipo === 'cambio') {
+      const manual = document.getElementById('consumoMesManual').value;
+      registro.consumoMesManual = tieneValor(manual) ? num(manual) : lectura;
+    }
+  }
 
-  const mismoPeriodo = datos.find(d => d.id !== editId && Number(d.year)===year && Number(d.month)===month);
+  const mismoPeriodo = datos.find(d => d.id !== editId && Number(d.year)===year && Number(d.month)===month && esCierre(d) === cierre);
   if(mismoPeriodo && !confirm('Ya existe una línea para ' + periodoTexto(registro) + '. ¿Deseas agregar otra de todos modos?')) return;
 
   if(editId) {
@@ -425,15 +639,24 @@ function editarFila(id){
   const d = datos.find(x=>x.id===id);
   if(!d) return;
   editId = id;
+  const tipo = tipoDe(d);
   document.getElementById('formTitle').textContent = 'Editando: ' + periodoTexto(d);
   document.getElementById('btnGuardar').textContent = '💾 Guardar cambios';
   document.getElementById('month').value = Number(d.month);
   document.getElementById('year').value = Number(d.year);
-  document.getElementById('consumoDolares').value = d.consumoDolares;
-  document.getElementById('impuestos').value = d.impuestos;
-  document.getElementById('lectura').value = d.lectura;
-  document.getElementById('inyectadaMes').value = d.inyectadaMes;
-  document.getElementById('subsidio').value = d.subsidio;
+  document.getElementById('tipo').value = tipo;
+  ajustarFormularioTipo();
+  if(tipo === 'cierre') {
+    document.getElementById('lectura').value = num(d.lecturaAnterior) || '';
+    document.getElementById('inyectadaMes').value = num(d.inyectadaAcum) || '';
+  } else {
+    document.getElementById('consumoDolares').value = d.consumoDolares;
+    document.getElementById('impuestos').value = d.impuestos;
+    document.getElementById('lectura').value = d.lectura;
+    document.getElementById('inyectadaMes').value = d.inyectadaMes;
+    document.getElementById('subsidio').value = d.subsidio;
+    if(tipo === 'cambio') document.getElementById('consumoMesManual').value = tieneValor(d.consumoMesManual) ? d.consumoMesManual : d.lectura;
+  }
   recalcularYRenderizar(false);
   window.scrollTo({top:0, behavior:'smooth'});
 }
@@ -449,8 +672,9 @@ function eliminarFila(id){
 }
 
 function reiniciarDatos(){
-  if(confirm('Esto borra los datos guardados en este navegador y restaura las líneas históricas del Excel. ¿Continuar?')) {
+  if(confirm('Esto borra los datos guardados en este navegador y restaura las líneas históricas originales (hasta agosto 2026, con el cambio de medidor de julio). ¿Continuar?')) {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.setItem(MIGRACION_KEY, '1');
     datos = JSON.parse(JSON.stringify(DATOS_INICIALES));
     editId = null;
     recalcularYRenderizar(true);
@@ -460,7 +684,7 @@ function reiniciarDatos(){
 function respaldarDatos(){
   const payload = {
     app:'energia_pacifica',
-    version:10,
+    version:VERSION_APP,
     fechaRespaldo:new Date().toISOString(),
     datos
   };
@@ -482,19 +706,33 @@ function restaurarRespaldo(event){
       const payload = JSON.parse(e.target.result);
       const nuevos = Array.isArray(payload) ? payload : payload.datos;
       if(!Array.isArray(nuevos) || nuevos.length===0) throw new Error('Archivo inválido');
-      datos = nuevos.map((d,i)=>({
-        id: d.id || ('rest_' + Date.now() + '_' + i),
-        year: Number(d.year),
-        month: Number(d.month),
-        consumoDolares: num(d.consumoDolares),
-        impuestos: num(d.impuestos),
-        lectura: num(d.lectura),
-        inyectadaMes: num(d.inyectadaMes),
-        subsidio: num(d.subsidio)
-      })).filter(d=>d.year && d.month && d.lectura);
+      const versionRespaldo = Array.isArray(payload) ? 0 : Number(payload.version || 0);
+      datos = nuevos.map((d,i)=>{
+        const base = {
+          id: d.id || ('rest_' + Date.now() + '_' + i),
+          year: Number(d.year),
+          month: Number(d.month),
+          tipo: tipoDe(d),
+          consumoDolares: num(d.consumoDolares),
+          impuestos: num(d.impuestos),
+          lectura: num(d.lectura),
+          inyectadaMes: num(d.inyectadaMes),
+          subsidio: num(d.subsidio)
+        };
+        if(base.tipo === 'cambio' && tieneValor(d.consumoMesManual)) base.consumoMesManual = num(d.consumoMesManual);
+        if(base.tipo === 'cierre') {
+          base.lecturaAnterior = num(d.lecturaAnterior);
+          base.consumoMes = num(d.consumoMes);
+          base.inyectadaAcum = num(d.inyectadaAcum);
+        }
+        return base;
+      }).filter(d=>d.year && d.month && (d.tipo === 'cierre' || d.lectura));
+      // Respaldos anteriores a la v11 no traen el cambio de medidor de julio 2026: se agrega automáticamente.
+      let aviso = 'Respaldo restaurado correctamente.';
+      if(versionRespaldo < 11 && insertarCambioMedidor2026()) aviso += '\nSe agregó la línea independiente de julio 2026 (medidor anterior) y se marcó julio 2026 como medidor nuevo.';
       editId = null;
       recalcularYRenderizar(true);
-      alert('Respaldo restaurado correctamente.');
+      alert(aviso);
     } catch(err) {
       alert('No se pudo restaurar el respaldo. Revisa que sea el archivo JSON generado por esta app.');
     }
@@ -505,11 +743,17 @@ function restaurarRespaldo(event){
 
 function exportarCSV(){
   const rows = ordenarReciente(calcular());
-  const headers = ['Mes','Consumo $','Impuestos $','Total sin subsidio $','% impuestos','Lectura anterior','Lectura actual','Consumo mes kWh','$/kWh consumo','$/kWh con impuestos','Energia total','Inyectada acumulada','Inyectada mes','% inyectada','Neto consumo','Consumo sin solar','Promedio dia','Subsidio $','% subsidio','Total factura $','Factura $/kWh'];
+  const headers = ['Mes','Tipo','Consumo $','Impuestos $','Total sin subsidio $','% impuestos','Lectura anterior','Lectura actual','Consumo mes kWh','$/kWh consumo','$/kWh con impuestos','Energia total','Inyectada acumulada','Inyectada mes','% inyectada','Neto consumo','Consumo sin solar','Promedio dia','Subsidio $','% subsidio','Total factura $','Factura $/kWh'];
   const csvRows = [headers.join(';')];
   rows.forEach(r => {
+    if(esCierre(r)) {
+      csvRows.push([
+        r.periodo,TIPOS.cierre,'','','','',r.lecturaAnterior,r.lectura,r.consumoMes,'','','',r.inyectadaAcum,r.inyectadaMes,'','','','','','','',''
+      ].join(';'));
+      return;
+    }
     csvRows.push([
-      r.periodo,r.consumoDolares,r.impuestos,r.totalSinSubsidio,r.pctImpuestos,r.lecturaAnterior,r.lectura,r.consumoMes,r.costoKw,r.costoKwConImpuestos,r.energiaTotal,r.inyectadaAcum,r.inyectadaMes,r.pctInyectada,r.netoConsumo,r.consumoSinSolar,r.promDia,r.subsidio,r.pctSubsidio,r.valorFactura,r.facturaKw
+      r.periodo,TIPOS[tipoDe(r)],r.consumoDolares,r.impuestos,r.totalSinSubsidio,r.pctImpuestos,(tipoDe(r)==='cambio' ? '' : r.lecturaAnterior),r.lectura,r.consumoMes,r.costoKw,r.costoKwConImpuestos,r.energiaTotal,r.inyectadaAcum,r.inyectadaMes,r.pctInyectada,r.netoConsumo,r.consumoSinSolar,r.promDia,r.subsidio,r.pctSubsidio,r.valorFactura,r.facturaKw
     ].join(';'));
   });
   const blob = new Blob([csvRows.join('\n')], {type:'text/csv;charset=utf-8;'});
@@ -563,6 +807,7 @@ function limpiarCalculadora(){
 document.addEventListener('DOMContentLoaded', function(){
   llenarSelects();
   activarSumasConEnter();
+  ajustarFormularioTipo();
   cargarDatos();
   document.getElementById('calcLibre').addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); calcularLibre(); }});
 });
