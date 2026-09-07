@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v16</title>
+<title>Consumo Energía Pacífica v17</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -227,6 +227,10 @@ tr.an-total td{background:var(--azul2);font-weight:bold;border-top:2px solid var
   <div class="table-wrap tabla-an">
     <table id="anTablaAnios"></table>
   </div>
+  <div class="notice">
+    Los kWh, el promedio por día y el $/kWh solo cuentan los meses con consumo calculable: quedan fuera la primera planilla (no tiene lectura anterior)
+    y los meses de cambio de medidor que no estén marcados como "Medidor nuevo" con su consumo escrito a mano. Cuando pasa, la celda de kWh dice cuántos meses entran, por ejemplo "11 de 12".
+  </div>
 </section>
 
 </div>
@@ -300,7 +304,7 @@ const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
 const FV = 12;
 // Marca que solo escribió la versión intermedia v12 (publicada unas horas el 2026-09-06): convertía sin estampar fv.
 const MIGRACION_FORMULA_KEY_VIEJA = 'energiaPacificaMigracionFormulaV12';
-const VERSION_APP = 16;
+const VERSION_APP = 17;
 let datos = [];
 let editId = null;
 
@@ -1128,6 +1132,10 @@ function anTodoElPeriodo(){
   renderAnalisis();
 }
 // Totales de un grupo de planillas (los kWh solo cuentan las que tienen consumo del mes).
+// "(11 de 12)" cuando no todos los meses del grupo tienen consumo calculable.
+function anNotaMeses(conKwh, total){
+  return conKwh < total ? ` <span class="small">(${conKwh} de ${total})</span>` : '';
+}
 function anTotales(arr){
   const conKwh = arr.filter(r => r.consumoMes > 0);
   return {
@@ -1169,7 +1177,8 @@ function renderAnalisis(){
   const todoElHistorico = per.length === rows.length;
   document.getElementById('anRango').innerHTML = (todoElHistorico ? 'Todo el histórico, desde ' : 'Período elegido: de ')
     + `<b>${anEsc(per[0].periodo)}</b> hasta <b>${anEsc(per[per.length-1].periodo)}</b>: `
-    + `${per.length} planillas. El subsidio recibido equivale al <b>${pct(div(tot.subsidio, tot.pagado + tot.subsidio))}</b> de lo que habrías pagado sin él. `
+    + `${per.length} planillas${tot.conKwhN < tot.n ? ' (los kWh cuentan ' + tot.conKwhN + ' de ellas; las demás no tienen consumo calculable)' : ''}. `
+    + `El subsidio recibido equivale al <b>${pct(div(tot.subsidio, tot.pagado + tot.subsidio))}</b> de lo que habrías pagado sin él. `
     + `El <b>ahorro por lo inyectado</b> es lo que habrían costado esos ${qty(tot.inyectada)} kWh al precio con impuestos de cada mes: <b>$ ${money(tot.ahorro)}</b>.`;
 
   // --- Botones de años ---
@@ -1212,8 +1221,8 @@ function renderAnalisis(){
       ? 'Cada barra es el promedio del año.'
       : 'Cada barra es la suma del año.' + (completos.length < anios.length ? ' Ojo: los años con menos de 12 planillas quedan más bajos porque tienen menos meses.' : '');
   } else if(modo === 'mesEnAnios') {
-    const cats = anios.map(String);
-    const valores = anios.map(a => {
+    const cats = marcados.map(String);
+    const valores = marcados.map(a => {
       const r = usables.find(x => Number(x.year)===a && Number(x.month)===mesElegido);
       return r ? valor(r) : null;
     });
@@ -1249,13 +1258,13 @@ function renderAnalisis(){
     const suma = campo => f.reduce((s,r)=>s+num(r[campo]),0);
     const kwh = fk.reduce((s,r)=>s+num(r.consumoMes),0);
     t += `<tr><td>${a}</td><td>${f.length}</td><td>$ ${money(suma('consumoDolares'))}</td><td>$ ${money(suma('impuestos'))}</td>`
-      + `<td class="ok">$ ${money(suma('subsidio'))}</td><td>$ ${money(suma('valorFactura'))}</td><td>${qty(kwh)}</td>`
+      + `<td class="ok">$ ${money(suma('subsidio'))}</td><td>$ ${money(suma('valorFactura'))}</td><td>${qty(kwh)}${anNotaMeses(fk.length, f.length)}</td>`
       + `<td>${qty(suma('inyectadaMes'))}</td><td class="ok">$ ${money(suma('ahorroInyectada'))}</td><td>${anFmt('dec1', div(kwh, fk.length * 30))}</td>`
       + `<td>$ ${dec(div(fk.reduce((s,r)=>s+num(r.totalSinSubsidio),0), kwh))}</td></tr>`;
   });
   const totT = anTotales(rows);
   t += `<tr class="an-total"><td>Total</td><td>${totT.n}</td><td>$ ${money(totT.consumo)}</td><td>$ ${money(totT.impuestos)}</td>`
-    + `<td>$ ${money(totT.subsidio)}</td><td>$ ${money(totT.pagado)}</td><td>${qty(totT.kwh)}</td><td>${qty(totT.inyectada)}</td><td>$ ${money(totT.ahorro)}</td>`
+    + `<td>$ ${money(totT.subsidio)}</td><td>$ ${money(totT.pagado)}</td><td>${qty(totT.kwh)}${anNotaMeses(totT.conKwhN, totT.n)}</td><td>${qty(totT.inyectada)}</td><td>$ ${money(totT.ahorro)}</td>`
     + `<td>${anFmt('dec1', div(totT.kwh, totT.conKwhN * 30))}</td><td>$ ${dec(div(totT.conImpuestos, totT.kwh))}</td></tr>`;
   t += '</tbody>';
   document.getElementById('anTablaAnios').innerHTML = t;
