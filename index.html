@@ -477,7 +477,7 @@ function migrarFormulaV12(){
   // Agosto 2026 con el desglose exacto de la planilla CNEL: valor consumo 105.56; impuestos 1.41+10.70+14.68+2.41.
   const ago = datos.find(d => !esCierre(d) && Number(d.year)===2026 && Number(d.month)===8
     && Math.abs(num(d.consumoDolares) - 110.47) < 0.011 && Math.abs(num(d.impuestos) - 24.29) < 0.011);
-  if(ago) { ago.consumoDolares = 105.56; ago.impuestos = 29.2; }
+  if(ago) { ago.consumoDolares = 105.56; ago.impuestos = 29.2; cambio = true; }
   return cambio;
 }
 
