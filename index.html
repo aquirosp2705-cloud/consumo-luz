@@ -141,63 +141,64 @@ const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "
 //  cierre  = línea independiente sin fórmulas: guarda los últimos valores del medidor anterior y no afecta a nadie.
 const TIPOS = { normal:'Normal', cambio:'Medidor nuevo (1er mes)', cierre:'Independiente (medidor anterior)' };
 const CAMPOS_NUMERICOS = ['consumoDolares','impuestos','lectura','inyectadaMes','subsidio','consumoMesManual','lecturaAnterior','consumoMes','inyectadaAcum'];
-const CIERRE_2026_07 = {"id":"cierre_2026_07","year":2026,"month":7,"tipo":"cierre","lecturaAnterior":27751,"lectura":0,"consumoMes":0,"inyectadaAcum":4275,"inyectadaMes":0,"consumoDolares":0,"impuestos":0,"subsidio":0};
+const CIERRE_2026_07 = {"id":"cierre_2026_07","year":2026,"month":7,"tipo":"cierre","fv":12,"lecturaAnterior":27751,"lectura":0,"consumoMes":0,"inyectadaAcum":4275,"inyectadaMes":0,"consumoDolares":0,"impuestos":0,"subsidio":0};
 const DATOS_INICIALES = [
-  {"id": "hist_1", "year": 2022, "month": 7, "tipo": "normal", "consumoDolares": 87.87, "impuestos": 32.82, "lectura": 5554, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_2", "year": 2022, "month": 8, "tipo": "normal", "consumoDolares": 139.07, "impuestos": 49.92, "lectura": 6372, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_3", "year": 2022, "month": 9, "tipo": "normal", "consumoDolares": 146.93, "impuestos": 52.55, "lectura": 7536, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_4", "year": 2022, "month": 10, "tipo": "normal", "consumoDolares": 73.99, "impuestos": 28.21, "lectura": 8225, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_5", "year": 2022, "month": 11, "tipo": "normal", "consumoDolares": 62.29, "impuestos": 24.34, "lectura": 8823, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_6", "year": 2022, "month": 12, "tipo": "normal", "consumoDolares": 87.52, "impuestos": 32.63, "lectura": 9639, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_7", "year": 2023, "month": 1, "tipo": "normal", "consumoDolares": 94.21, "impuestos": 36.65, "lectura": 10551, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_8", "year": 2023, "month": 2, "tipo": "normal", "consumoDolares": 89.55, "impuestos": 34.78, "lectura": 11421, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_9", "year": 2023, "month": 3, "tipo": "normal", "consumoDolares": 82.9, "impuestos": 32.08, "lectura": 12231, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_10", "year": 2023, "month": 4, "tipo": "normal", "consumoDolares": 95.54, "impuestos": 37.19, "lectura": 13155, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_11", "year": 2023, "month": 5, "tipo": "normal", "consumoDolares": 73.81, "impuestos": 28.4, "lectura": 13883, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_12", "year": 2023, "month": 6, "tipo": "normal", "consumoDolares": 101.36, "impuestos": 38.96, "lectura": 14762, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_13", "year": 2023, "month": 7, "tipo": "normal", "consumoDolares": 97.3, "impuestos": 37.36, "lectura": 101, "inyectadaMes": 0, "subsidio": 0},
-  {"id": "hist_14", "year": 2023, "month": 8, "tipo": "normal", "consumoDolares": 49.28, "impuestos": 20.16, "lectura": 597, "inyectadaMes": 80, "subsidio": 0},
-  {"id": "hist_15", "year": 2023, "month": 9, "tipo": "normal", "consumoDolares": 49.18, "impuestos": 20.13, "lectura": 1092, "inyectadaMes": 80, "subsidio": 0},
-  {"id": "hist_16", "year": 2023, "month": 10, "tipo": "normal", "consumoDolares": 44.35, "impuestos": 18.56, "lectura": 1541, "inyectadaMes": 80, "subsidio": 0},
-  {"id": "hist_17", "year": 2023, "month": 11, "tipo": "normal", "consumoDolares": 48.55, "impuestos": 19.93, "lectura": 2030, "inyectadaMes": 80, "subsidio": 0},
-  {"id": "hist_18", "year": 2023, "month": 12, "tipo": "normal", "consumoDolares": 61.25, "impuestos": 24.07, "lectura": 2640, "inyectadaMes": 80, "subsidio": 0},
-  {"id": "hist_19", "year": 2024, "month": 1, "tipo": "normal", "consumoDolares": 74.47, "impuestos": 28.43, "lectura": 3374, "inyectadaMes": 80, "subsidio": 0},
-  {"id": "hist_20", "year": 2024, "month": 2, "tipo": "normal", "consumoDolares": 59.26, "impuestos": 22.61, "lectura": 3965, "inyectadaMes": 80, "subsidio": 0},
-  {"id": "hist_21", "year": 2024, "month": 3, "tipo": "normal", "consumoDolares": 77.35, "impuestos": 29.14, "lectura": 4725, "inyectadaMes": 80, "subsidio": 0},
-  {"id": "hist_22", "year": 2024, "month": 4, "tipo": "normal", "consumoDolares": 72.47, "impuestos": 27.71, "lectura": 5441, "inyectadaMes": 80, "subsidio": 0},
-  {"id": "hist_23", "year": 2024, "month": 5, "tipo": "normal", "consumoDolares": 90.95, "impuestos": 31.64, "lectura": 6242, "inyectadaMes": 80, "subsidio": 45.03},
-  {"id": "hist_24", "year": 2024, "month": 6, "tipo": "normal", "consumoDolares": 68.46, "impuestos": 25.07, "lectura": 6888, "inyectadaMes": 80, "subsidio": 34.23},
-  {"id": "hist_25", "year": 2024, "month": 7, "tipo": "normal", "consumoDolares": 47.71, "impuestos": 18.23, "lectura": 7369, "inyectadaMes": 80, "subsidio": 23.86},
-  {"id": "hist_26", "year": 2024, "month": 8, "tipo": "normal", "consumoDolares": 53.17, "impuestos": 20.48, "lectura": 7896, "inyectadaMes": 80, "subsidio": 26.59},
-  {"id": "hist_27", "year": 2024, "month": 9, "tipo": "normal", "consumoDolares": 60.37, "impuestos": 22.9, "lectura": 8479, "inyectadaMes": 80, "subsidio": 30.9},
-  {"id": "hist_28", "year": 2024, "month": 10, "tipo": "normal", "consumoDolares": 81.2, "impuestos": 29.06, "lectura": 9219, "inyectadaMes": 80, "subsidio": 40.6},
-  {"id": "hist_29", "year": 2024, "month": 11, "tipo": "normal", "consumoDolares": 74.25, "impuestos": 18.68, "lectura": 9951, "inyectadaMes": 80, "subsidio": 28.31},
-  {"id": "hist_30", "year": 2024, "month": 12, "tipo": "normal", "consumoDolares": 97.43, "impuestos": 36.8, "lectura": 10892, "inyectadaMes": 80, "subsidio": 48.72},
-  {"id": "hist_31", "year": 2025, "month": 1, "tipo": "normal", "consumoDolares": 79.79, "impuestos": 29.83, "lectura": 11674, "inyectadaMes": 101, "subsidio": 40.61},
-  {"id": "hist_32", "year": 2025, "month": 2, "tipo": "normal", "consumoDolares": 62.72, "impuestos": 23.71, "lectura": 12298, "inyectadaMes": 126, "subsidio": 31.36},
-  {"id": "hist_33", "year": 2025, "month": 3, "tipo": "normal", "consumoDolares": 72.03, "impuestos": 26.92, "lectura": 13010, "inyectadaMes": 158, "subsidio": 36.02},
-  {"id": "hist_34", "year": 2025, "month": 4, "tipo": "normal", "consumoDolares": 65.03, "impuestos": 24.26, "lectura": 13656, "inyectadaMes": 124, "subsidio": 32.52},
-  {"id": "hist_35", "year": 2025, "month": 5, "tipo": "normal", "consumoDolares": 66.79, "impuestos": 24.72, "lectura": 14289, "inyectadaMes": 98, "subsidio": 33.4},
-  {"id": "hist_36", "year": 2025, "month": 6, "tipo": "normal", "consumoDolares": 59.98, "impuestos": 22.15, "lectura": 14869, "inyectadaMes": 87, "subsidio": 29.99},
-  {"id": "hist_37", "year": 2025, "month": 7, "tipo": "normal", "consumoDolares": 52.27, "impuestos": 20.31, "lectura": 15389, "inyectadaMes": 111, "subsidio": 26.14},
-  {"id": "hist_38", "year": 2025, "month": 8, "tipo": "normal", "consumoDolares": 49.28, "impuestos": 21.26, "lectura": 15940, "inyectadaMes": 94, "subsidio": 28.13},
-  {"id": "hist_39", "year": 2025, "month": 9, "tipo": "normal", "consumoDolares": 56.94, "impuestos": 24.26, "lectura": 16558, "inyectadaMes": 101, "subsidio": 32.43},
-  {"id": "hist_40", "year": 2025, "month": 10, "tipo": "normal", "consumoDolares": 63.11, "impuestos": 25.73, "lectura": 17224, "inyectadaMes": 123, "subsidio": 35.52},
-  {"id": "hist_41", "year": 2025, "month": 11, "tipo": "normal", "consumoDolares": 65.72, "impuestos": 21.5, "lectura": 17854, "inyectadaMes": 92, "subsidio": 31.68},
-  {"id": "hist_42", "year": 2025, "month": 12, "tipo": "normal", "consumoDolares": 83.79, "impuestos": 24.5, "lectura": 18672, "inyectadaMes": 109, "subsidio": 42.61},
-  {"id": "hist_43", "year": 2026, "month": 1, "tipo": "normal", "consumoDolares": 75.52, "impuestos": 14.99, "lectura": 19362, "inyectadaMes": 80, "subsidio": 35.54},
-  {"id": "hist_44", "year": 2026, "month": 2, "tipo": "normal", "consumoDolares": 77.53, "impuestos": 15.53, "lectura": 20073, "inyectadaMes": 102, "subsidio": 36.67},
-  {"id": "hist_45", "year": 2026, "month": 3, "tipo": "normal", "consumoDolares": 113.35, "impuestos": 22.94, "lectura": 21083, "inyectadaMes": 150, "subsidio": 53.55},
-  {"id": "hist_46", "year": 2026, "month": 4, "tipo": "normal", "consumoDolares": 85.59, "impuestos": 20.57, "lectura": 21903, "inyectadaMes": 123, "subsidio": 42.72},
-  {"id": "m_1781052238900", "year": 2026, "month": 5, "tipo": "normal", "consumoDolares": 87.0, "impuestos": 24.75, "lectura": 22683, "inyectadaMes": 95, "subsidio": 44.21},
-  {"id": "m_1783448213661", "year": 2026, "month": 6, "tipo": "normal", "consumoDolares": 94.27, "impuestos": 19.89, "lectura": 23476, "inyectadaMes": 94, "subsidio": 45.16},
-  {"id": "cierre_2026_07", "year": 2026, "month": 7, "tipo": "cierre", "lecturaAnterior": 27751, "lectura": 0, "consumoMes": 0, "inyectadaAcum": 4275, "inyectadaMes": 0, "consumoDolares": 0, "impuestos": 0, "subsidio": 0},
-  {"id": "m_1786458170253", "year": 2026, "month": 7, "tipo": "cambio", "consumoDolares": 103.1, "impuestos": 28.61, "lectura": 564, "inyectadaMes": 69, "subsidio": 52.26, "consumoMesManual": 960},
-  {"id": "m_1788711415099", "year": 2026, "month": 8, "tipo": "normal", "consumoDolares": 105.56, "impuestos": 29.2, "lectura": 1472, "inyectadaMes": 100, "subsidio": 53.49}
+  {"id": "hist_1", "year": 2022, "month": 7, "tipo": "normal", "consumoDolares": 87.87, "impuestos": 32.82, "lectura": 5554, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_2", "year": 2022, "month": 8, "tipo": "normal", "consumoDolares": 139.07, "impuestos": 49.92, "lectura": 6372, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_3", "year": 2022, "month": 9, "tipo": "normal", "consumoDolares": 146.93, "impuestos": 52.55, "lectura": 7536, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_4", "year": 2022, "month": 10, "tipo": "normal", "consumoDolares": 73.99, "impuestos": 28.21, "lectura": 8225, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_5", "year": 2022, "month": 11, "tipo": "normal", "consumoDolares": 62.29, "impuestos": 24.34, "lectura": 8823, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_6", "year": 2022, "month": 12, "tipo": "normal", "consumoDolares": 87.52, "impuestos": 32.63, "lectura": 9639, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_7", "year": 2023, "month": 1, "tipo": "normal", "consumoDolares": 94.21, "impuestos": 36.65, "lectura": 10551, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_8", "year": 2023, "month": 2, "tipo": "normal", "consumoDolares": 89.55, "impuestos": 34.78, "lectura": 11421, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_9", "year": 2023, "month": 3, "tipo": "normal", "consumoDolares": 82.9, "impuestos": 32.08, "lectura": 12231, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_10", "year": 2023, "month": 4, "tipo": "normal", "consumoDolares": 95.54, "impuestos": 37.19, "lectura": 13155, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_11", "year": 2023, "month": 5, "tipo": "normal", "consumoDolares": 73.81, "impuestos": 28.4, "lectura": 13883, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_12", "year": 2023, "month": 6, "tipo": "normal", "consumoDolares": 101.36, "impuestos": 38.96, "lectura": 14762, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_13", "year": 2023, "month": 7, "tipo": "normal", "consumoDolares": 97.3, "impuestos": 37.36, "lectura": 101, "inyectadaMes": 0, "subsidio": 0, "fv": 12},
+  {"id": "hist_14", "year": 2023, "month": 8, "tipo": "normal", "consumoDolares": 49.28, "impuestos": 20.16, "lectura": 597, "inyectadaMes": 80, "subsidio": 0, "fv": 12},
+  {"id": "hist_15", "year": 2023, "month": 9, "tipo": "normal", "consumoDolares": 49.18, "impuestos": 20.13, "lectura": 1092, "inyectadaMes": 80, "subsidio": 0, "fv": 12},
+  {"id": "hist_16", "year": 2023, "month": 10, "tipo": "normal", "consumoDolares": 44.35, "impuestos": 18.56, "lectura": 1541, "inyectadaMes": 80, "subsidio": 0, "fv": 12},
+  {"id": "hist_17", "year": 2023, "month": 11, "tipo": "normal", "consumoDolares": 48.55, "impuestos": 19.93, "lectura": 2030, "inyectadaMes": 80, "subsidio": 0, "fv": 12},
+  {"id": "hist_18", "year": 2023, "month": 12, "tipo": "normal", "consumoDolares": 61.25, "impuestos": 24.07, "lectura": 2640, "inyectadaMes": 80, "subsidio": 0, "fv": 12},
+  {"id": "hist_19", "year": 2024, "month": 1, "tipo": "normal", "consumoDolares": 74.47, "impuestos": 28.43, "lectura": 3374, "inyectadaMes": 80, "subsidio": 0, "fv": 12},
+  {"id": "hist_20", "year": 2024, "month": 2, "tipo": "normal", "consumoDolares": 59.26, "impuestos": 22.61, "lectura": 3965, "inyectadaMes": 80, "subsidio": 0, "fv": 12},
+  {"id": "hist_21", "year": 2024, "month": 3, "tipo": "normal", "consumoDolares": 77.35, "impuestos": 29.14, "lectura": 4725, "inyectadaMes": 80, "subsidio": 0, "fv": 12},
+  {"id": "hist_22", "year": 2024, "month": 4, "tipo": "normal", "consumoDolares": 72.47, "impuestos": 27.71, "lectura": 5441, "inyectadaMes": 80, "subsidio": 0, "fv": 12},
+  {"id": "hist_23", "year": 2024, "month": 5, "tipo": "normal", "consumoDolares": 90.95, "impuestos": 31.64, "lectura": 6242, "inyectadaMes": 80, "subsidio": 45.03, "fv": 12},
+  {"id": "hist_24", "year": 2024, "month": 6, "tipo": "normal", "consumoDolares": 68.46, "impuestos": 25.07, "lectura": 6888, "inyectadaMes": 80, "subsidio": 34.23, "fv": 12},
+  {"id": "hist_25", "year": 2024, "month": 7, "tipo": "normal", "consumoDolares": 47.71, "impuestos": 18.23, "lectura": 7369, "inyectadaMes": 80, "subsidio": 23.86, "fv": 12},
+  {"id": "hist_26", "year": 2024, "month": 8, "tipo": "normal", "consumoDolares": 53.17, "impuestos": 20.48, "lectura": 7896, "inyectadaMes": 80, "subsidio": 26.59, "fv": 12},
+  {"id": "hist_27", "year": 2024, "month": 9, "tipo": "normal", "consumoDolares": 60.37, "impuestos": 22.9, "lectura": 8479, "inyectadaMes": 80, "subsidio": 30.9, "fv": 12},
+  {"id": "hist_28", "year": 2024, "month": 10, "tipo": "normal", "consumoDolares": 81.2, "impuestos": 29.06, "lectura": 9219, "inyectadaMes": 80, "subsidio": 40.6, "fv": 12},
+  {"id": "hist_29", "year": 2024, "month": 11, "tipo": "normal", "consumoDolares": 74.25, "impuestos": 18.68, "lectura": 9951, "inyectadaMes": 80, "subsidio": 28.31, "fv": 12},
+  {"id": "hist_30", "year": 2024, "month": 12, "tipo": "normal", "consumoDolares": 97.43, "impuestos": 36.8, "lectura": 10892, "inyectadaMes": 80, "subsidio": 48.72, "fv": 12},
+  {"id": "hist_31", "year": 2025, "month": 1, "tipo": "normal", "consumoDolares": 79.79, "impuestos": 29.83, "lectura": 11674, "inyectadaMes": 101, "subsidio": 40.61, "fv": 12},
+  {"id": "hist_32", "year": 2025, "month": 2, "tipo": "normal", "consumoDolares": 62.72, "impuestos": 23.71, "lectura": 12298, "inyectadaMes": 126, "subsidio": 31.36, "fv": 12},
+  {"id": "hist_33", "year": 2025, "month": 3, "tipo": "normal", "consumoDolares": 72.03, "impuestos": 26.92, "lectura": 13010, "inyectadaMes": 158, "subsidio": 36.02, "fv": 12},
+  {"id": "hist_34", "year": 2025, "month": 4, "tipo": "normal", "consumoDolares": 65.03, "impuestos": 24.26, "lectura": 13656, "inyectadaMes": 124, "subsidio": 32.52, "fv": 12},
+  {"id": "hist_35", "year": 2025, "month": 5, "tipo": "normal", "consumoDolares": 66.79, "impuestos": 24.72, "lectura": 14289, "inyectadaMes": 98, "subsidio": 33.4, "fv": 12},
+  {"id": "hist_36", "year": 2025, "month": 6, "tipo": "normal", "consumoDolares": 59.98, "impuestos": 22.15, "lectura": 14869, "inyectadaMes": 87, "subsidio": 29.99, "fv": 12},
+  {"id": "hist_37", "year": 2025, "month": 7, "tipo": "normal", "consumoDolares": 52.27, "impuestos": 20.31, "lectura": 15389, "inyectadaMes": 111, "subsidio": 26.14, "fv": 12},
+  {"id": "hist_38", "year": 2025, "month": 8, "tipo": "normal", "consumoDolares": 49.28, "impuestos": 21.26, "lectura": 15940, "inyectadaMes": 94, "subsidio": 28.13, "fv": 12},
+  {"id": "hist_39", "year": 2025, "month": 9, "tipo": "normal", "consumoDolares": 56.94, "impuestos": 24.26, "lectura": 16558, "inyectadaMes": 101, "subsidio": 32.43, "fv": 12},
+  {"id": "hist_40", "year": 2025, "month": 10, "tipo": "normal", "consumoDolares": 63.11, "impuestos": 25.73, "lectura": 17224, "inyectadaMes": 123, "subsidio": 35.52, "fv": 12},
+  {"id": "hist_41", "year": 2025, "month": 11, "tipo": "normal", "consumoDolares": 65.72, "impuestos": 21.5, "lectura": 17854, "inyectadaMes": 92, "subsidio": 31.68, "fv": 12},
+  {"id": "hist_42", "year": 2025, "month": 12, "tipo": "normal", "consumoDolares": 83.79, "impuestos": 24.5, "lectura": 18672, "inyectadaMes": 109, "subsidio": 42.61, "fv": 12},
+  {"id": "hist_43", "year": 2026, "month": 1, "tipo": "normal", "consumoDolares": 75.52, "impuestos": 14.99, "lectura": 19362, "inyectadaMes": 80, "subsidio": 35.54, "fv": 12},
+  {"id": "hist_44", "year": 2026, "month": 2, "tipo": "normal", "consumoDolares": 77.53, "impuestos": 15.53, "lectura": 20073, "inyectadaMes": 102, "subsidio": 36.67, "fv": 12},
+  {"id": "hist_45", "year": 2026, "month": 3, "tipo": "normal", "consumoDolares": 113.35, "impuestos": 22.94, "lectura": 21083, "inyectadaMes": 150, "subsidio": 53.55, "fv": 12},
+  {"id": "hist_46", "year": 2026, "month": 4, "tipo": "normal", "consumoDolares": 85.59, "impuestos": 20.57, "lectura": 21903, "inyectadaMes": 123, "subsidio": 42.72, "fv": 12},
+  {"id": "m_1781052238900", "year": 2026, "month": 5, "tipo": "normal", "consumoDolares": 87.0, "impuestos": 24.75, "lectura": 22683, "inyectadaMes": 95, "subsidio": 44.21, "fv": 12},
+  {"id": "m_1783448213661", "year": 2026, "month": 6, "tipo": "normal", "consumoDolares": 94.27, "impuestos": 19.89, "lectura": 23476, "inyectadaMes": 94, "subsidio": 45.16, "fv": 12},
+  {"id": "cierre_2026_07", "year": 2026, "month": 7, "tipo": "cierre", "lecturaAnterior": 27751, "lectura": 0, "consumoMes": 0, "inyectadaAcum": 4275, "inyectadaMes": 0, "consumoDolares": 0, "impuestos": 0, "subsidio": 0, "fv": 12},
+  {"id": "m_1786458170253", "year": 2026, "month": 7, "tipo": "cambio", "consumoDolares": 103.1, "impuestos": 28.61, "lectura": 564, "inyectadaMes": 69, "subsidio": 52.26, "consumoMesManual": 960, "fv": 12},
+  {"id": "m_1788711415099", "year": 2026, "month": 8, "tipo": "normal", "consumoDolares": 105.56, "impuestos": 29.2, "lectura": 1472, "inyectadaMes": 100, "subsidio": 53.49, "fv": 12}
 ];
 const STORAGE_KEY = 'energiaPacificaDatosV10';
 const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
-const MIGRACION_FORMULA_KEY = 'energiaPacificaMigracionFormulaV12';
+// fv = versión de fórmula con la que se escribió cada fila (12 = valor consumo sin impuestos). Las filas sin fv son de la fórmula vieja.
+const FV = 12;
 const VERSION_APP = 12;
 let datos = [];
 let editId = null;
@@ -367,12 +368,16 @@ function insertarCambioMedidor2026(){
 // Hasta la v11 la fórmula restaba los impuestos, así que el "Total consumo $" se escribía con los impuestos
 // sumados dos veces para que el total cuadrara. Desde la v12 se escribe el valor consumo sin impuestos y la
 // fórmula los suma: valor consumo = total anterior − 2 × impuestos (el valor a pagar no cambia).
+// Solo convierte las filas que aún no tienen fv (se puede llamar las veces que sea sin volver a convertir).
 function migrarFormulaV12(){
   let cambio = false;
   datos.forEach(d => {
-    if(esCierre(d)) return;
-    d.consumoDolares = Math.round((num(d.consumoDolares) - 2 * num(d.impuestos)) * 100) / 100;
-    cambio = true;
+    if(Number(d.fv) >= FV) return;
+    if(!esCierre(d)) {
+      d.consumoDolares = Math.round((num(d.consumoDolares) - 2 * num(d.impuestos)) * 100) / 100;
+      cambio = true;
+    }
+    d.fv = FV;
   });
   // Agosto 2026 con el desglose exacto de la planilla CNEL: valor consumo 105.56; impuestos 1.41+10.70+14.68+2.41.
   const ago = datos.find(d => !esCierre(d) && Number(d.year)===2026 && Number(d.month)===8
@@ -394,17 +399,17 @@ function cargarDatos(){
   let guardar = false;
   if(desdeGuardado) {
     if(!localStorage.getItem(MIGRACION_KEY)) guardar = insertarCambioMedidor2026() || guardar;
-    if(!localStorage.getItem(MIGRACION_FORMULA_KEY)) guardar = migrarFormulaV12() || guardar;
+    guardar = migrarFormulaV12() || guardar;
   }
-  // Las marcas se graban siempre: los datos iniciales ya vienen al día y no hay que volver a migrar.
-  marcarMigracionesHechas();
+  // La marca se graba siempre: los datos iniciales ya traen el cambio de medidor y no hay que volver a migrar.
+  marcarMigracionHecha();
   recalcularYRenderizar(guardar);
 }
 function guardarLocal(){
   localStorage.setItem(STORAGE_KEY, JSON.stringify(datos));
 }
-function marcarMigracionesHechas(){
-  try { localStorage.setItem(MIGRACION_KEY, '1'); localStorage.setItem(MIGRACION_FORMULA_KEY, '1'); } catch(e) {}
+function marcarMigracionHecha(){
+  try { localStorage.setItem(MIGRACION_KEY, '1'); } catch(e) {}
 }
 
 function poblarResumen(calc){
@@ -627,7 +632,7 @@ function guardarPlanilla(){
     const existente = editId ? datos.find(d=>d.id===editId) : null;
     registro = {
       id: editId || ('m_' + Date.now()),
-      year, month, tipo:'cierre',
+      year, month, tipo:'cierre', fv: FV,
       lecturaAnterior: lectura,
       lectura: existente ? num(existente.lectura) : 0,
       consumoMes: existente ? num(existente.consumoMes) : 0,
@@ -638,7 +643,7 @@ function guardarPlanilla(){
   } else {
     registro = {
       id: editId || ('m_' + Date.now()),
-      year, month, tipo: tipo === 'cambio' ? 'cambio' : 'normal',
+      year, month, tipo: tipo === 'cambio' ? 'cambio' : 'normal', fv: FV,
       consumoDolares: num(document.getElementById('consumoDolares').value),
       impuestos: num(document.getElementById('impuestos').value),
       lectura,
@@ -703,7 +708,7 @@ function eliminarFila(id){
 function reiniciarDatos(){
   if(confirm('Esto borra los datos guardados en este navegador y restaura las líneas históricas originales (hasta agosto 2026, con el cambio de medidor de julio y la fórmula nueva). ¿Continuar?')) {
     localStorage.removeItem(STORAGE_KEY);
-    marcarMigracionesHechas();
+    marcarMigracionHecha();
     datos = JSON.parse(JSON.stringify(DATOS_INICIALES));
     editId = null;
     recalcularYRenderizar(true);
@@ -748,6 +753,7 @@ function restaurarRespaldo(event){
           inyectadaMes: num(d.inyectadaMes),
           subsidio: num(d.subsidio)
         };
+        if(Number(d.fv) >= FV) base.fv = FV;
         if(base.tipo === 'cambio' && tieneValor(d.consumoMesManual)) base.consumoMesManual = num(d.consumoMesManual);
         if(base.tipo === 'cierre') {
           base.lecturaAnterior = num(d.lecturaAnterior);
@@ -759,8 +765,8 @@ function restaurarRespaldo(event){
       // Respaldos anteriores a la v11 no traen el cambio de medidor de julio 2026 y los anteriores a la v12 usan la fórmula vieja: se convierten automáticamente.
       let aviso = 'Respaldo restaurado correctamente.';
       if(versionRespaldo < 11 && insertarCambioMedidor2026()) aviso += '\nSe agregó la línea independiente de julio 2026 (medidor anterior) y se marcó julio 2026 como medidor nuevo.';
-      if(versionRespaldo < 12 && migrarFormulaV12()) aviso += '\nLos valores de consumo se pasaron a la fórmula nueva (valor consumo sin impuestos + impuestos − subsidio).';
-      marcarMigracionesHechas();
+      if(migrarFormulaV12()) aviso += '\nLos valores de consumo se pasaron a la fórmula nueva (valor consumo sin impuestos + impuestos − subsidio).';
+      marcarMigracionHecha();
       editId = null;
       recalcularYRenderizar(true);
       alert(aviso);
