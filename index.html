@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v13</title>
+<title>Consumo Energía Pacífica v14</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -28,7 +28,7 @@ button.sec{background:#64748b} button.danger{background:#b91c1c} button.good{bac
 .kpi{background:var(--azul2);border:1px solid #cfe2f3;border-radius:12px;padding:12px;text-align:center}
 .kpi b{display:block;font-size:19px;color:var(--azul)} .kpi span{font-size:12px;color:#475569}
 .table-wrap{overflow:auto;border:1px solid var(--borde);border-radius:12px;background:white;max-height:68vh}
-table{border-collapse:collapse;width:100%;font-size:12px;min-width:1950px}
+table{border-collapse:collapse;width:100%;font-size:12px;min-width:2050px}
 th,td{border-bottom:1px solid #e5e7eb;border-right:1px solid #eef2f7;padding:7px;text-align:right;white-space:nowrap}
 th{position:sticky;top:0;background:var(--azul);color:white;z-index:2;text-align:center}
 td:first-child, th:first-child{position:sticky;left:0;z-index:3;text-align:left}
@@ -47,7 +47,7 @@ tr.independiente td:first-child{background:#eef2f7}
 nav.tabs{display:flex;gap:8px;justify-content:center;background:var(--azul);padding:0 16px 12px}
 nav.tabs button{background:#33628c;color:#dbeafe;border-radius:10px 10px 0 0;padding:11px 20px;font-size:14px}
 nav.tabs button.activa{background:white;color:var(--azul)}
-.kpis-an{grid-template-columns:repeat(6,1fr)}
+.kpis-an{grid-template-columns:repeat(4,1fr)}
 .kpi-verde{background:var(--verde);border-color:#b6d7a8} .kpi-verde b{color:#166534}
 .an-controles{grid-template-columns:repeat(3,minmax(200px,1fr));align-items:end}
 .chips{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 12px}
@@ -62,9 +62,10 @@ nav.tabs button.activa{background:white;color:var(--azul)}
 .leyenda-item{display:flex;align-items:center;gap:6px}
 .leyenda-item i{width:13px;height:13px;border-radius:3px;display:inline-block}
 .tabla-an{max-height:none}
-.tabla-an table{min-width:1050px}
+.tabla-an table{min-width:1180px}
 .tabla-an td:first-child{background:white}
 tr.an-total td{background:var(--azul2);font-weight:bold;border-top:2px solid var(--azul)}
+@media(max-width:1250px){.kpis-an{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:1000px){.form-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.kpis-an{grid-template-columns:1fr 1fr}.an-controles{grid-template-columns:1fr}}
 </style>
 </head>
@@ -142,13 +143,14 @@ tr.an-total td{background:var(--azul2);font-weight:bold;border-top:2px solid var
 
 <section class="card">
   <h2>Resumen mes</h2>
-  <div class="form-grid" style="grid-template-columns:minmax(220px,330px) repeat(5,1fr);">
+  <div class="form-grid" style="grid-template-columns:minmax(190px,260px) repeat(6,1fr);">
     <div><label>Elegir mes a mostrar</label><select id="resumenSelect" onchange="renderResumenSeleccionado()"></select></div>
     <div class="kpi"><b id="kpiConsumo">-</b><span>Consumo mes kWh</span></div>
     <div class="kpi"><b id="kpiCosto">-</b><span>$/kWh con impuestos</span></div>
     <div class="kpi"><b id="kpiIny">-</b><span>% inyectada</span></div>
     <div class="kpi"><b id="kpiFactura">-</b><span>Valor a pagar $</span></div>
     <div class="kpi"><b id="kpiSinSolar">-</b><span>Consumo sin solar kWh</span></div>
+    <div class="kpi kpi-verde"><b id="kpiAhorro">-</b><span>Ahorro inyectado $</span></div>
   </div>
 </section>
 
@@ -171,7 +173,9 @@ tr.an-total td{background:var(--azul2);font-weight:bold;border-top:2px solid var
     <div class="kpi"><b id="anKpiSinSubsidio">-</b><span>Habría pagado sin subsidio</span></div>
     <div class="kpi"><b id="anKpiKwh">-</b><span>Consumo total kWh</span></div>
     <div class="kpi kpi-verde"><b id="anKpiInyectada">-</b><span>Inyectado por los paneles kWh</span></div>
+    <div class="kpi kpi-verde"><b id="anKpiAhorro">-</b><span>Ahorro por lo inyectado $</span></div>
     <div class="kpi"><b id="anKpiDia">-</b><span>Promedio kWh por día</span></div>
+    <div class="kpi"><b id="anKpiPrecio">-</b><span>Costo promedio $/kWh con impuestos</span></div>
   </div>
   <div class="notice" id="anRango"></div>
 </section>
@@ -288,7 +292,7 @@ const STORAGE_KEY = 'energiaPacificaDatosV10';
 const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
 // fv = versión de fórmula con la que se escribió cada fila (12 = valor consumo sin impuestos). Las filas sin fv son de la fórmula vieja.
 const FV = 12;
-const VERSION_APP = 13;
+const VERSION_APP = 14;
 let datos = [];
 let editId = null;
 
@@ -431,6 +435,8 @@ function calcular(){
       energiaTotal: lectura + acumInyectada,
       inyectadaAcum: acumInyectada,
       pctInyectada: div(inyectadaMes, consumoSinSolar),
+      // Lo que habría costado esa energía si la hubiera comprado a la eléctrica ese mes (con impuestos, antes del subsidio).
+      ahorroInyectada: inyectadaMes * div(totalSinSubsidio, consumoMes),
       netoConsumo: consumoMes,
       consumoSinSolar,
       promDia: div(consumoMes, 30),
@@ -520,6 +526,7 @@ function renderResumenSeleccionado(){
   document.getElementById('kpiIny').textContent = pct(r.pctInyectada);
   document.getElementById('kpiFactura').textContent = '$ ' + money(r.valorFactura);
   document.getElementById('kpiSinSolar').textContent = qty(r.consumoSinSolar);
+  document.getElementById('kpiAhorro').textContent = '$ ' + money(r.ahorroInyectada);
 }
 
 function opcionesMes(selected){
@@ -548,7 +555,7 @@ function renderTabla(rows){
     'Mes','Año','Tipo de línea','Valor consumo $','Impuestos $','Consumo + impuestos $','% impuestos',
     'Lectura anterior','Lectura actual','Consumo mes kWh',
     '$/kWh consumo','$/kWh con impuestos','Energía total',
-    'Inyectada acum.','Inyectada mes','% inyectada',
+    'Inyectada acum.','Inyectada mes','% inyectada','Ahorro inyectado $',
     'Neto consumo','Consumo sin solar','Prom. día',
     'Subsidio $','% subsidio','Valor a pagar $','Factura $/kWh','Acción'
   ];
@@ -591,6 +598,7 @@ function renderTabla(rows){
       <td class="calc">${dash}</td>
       <td class="calc">${dash}</td>
       <td class="calc">${dash}</td>
+      <td class="calc">${dash}</td>
       ${acciones}
     </tr>`;
       return;
@@ -617,6 +625,7 @@ function renderTabla(rows){
       <td class="calc">${qty(r.inyectadaAcum)}</td>
       <td class="inputcol">${inputLinea(r.id,'inyectadaMes',r.inyectadaMes,0)}</td>
       <td class="calc">${pct(r.pctInyectada)}</td>
+      <td class="calc ok">$ ${money(r.ahorroInyectada)}</td>
       <td class="calc">${qty(r.netoConsumo)}</td>
       <td class="calc ok">${qty(r.consumoSinSolar)}</td>
       <td class="calc">${qty(r.promDia)}</td>
@@ -870,17 +879,17 @@ function restaurarRespaldo(event){
 
 function exportarCSV(){
   const rows = ordenarReciente(calcular());
-  const headers = ['Mes','Tipo','Valor consumo $','Impuestos $','Consumo + impuestos $','% impuestos','Lectura anterior','Lectura actual','Consumo mes kWh','$/kWh consumo','$/kWh con impuestos','Energia total','Inyectada acumulada','Inyectada mes','% inyectada','Neto consumo','Consumo sin solar','Promedio dia','Subsidio $','% subsidio','Valor a pagar $','Factura $/kWh'];
+  const headers = ['Mes','Tipo','Valor consumo $','Impuestos $','Consumo + impuestos $','% impuestos','Lectura anterior','Lectura actual','Consumo mes kWh','$/kWh consumo','$/kWh con impuestos','Energia total','Inyectada acumulada','Inyectada mes','% inyectada','Ahorro inyectado $','Neto consumo','Consumo sin solar','Promedio dia','Subsidio $','% subsidio','Valor a pagar $','Factura $/kWh'];
   const csvRows = [headers.join(';')];
   rows.forEach(r => {
     if(esCierre(r)) {
       csvRows.push([
-        r.periodo,TIPOS.cierre,'','','','',r.lecturaAnterior,r.lectura,r.consumoMes,'','','',r.inyectadaAcum,r.inyectadaMes,'','','','','','','',''
+        r.periodo,TIPOS.cierre,'','','','',r.lecturaAnterior,r.lectura,r.consumoMes,'','','',r.inyectadaAcum,r.inyectadaMes,'','','','','','','','',''
       ].join(';'));
       return;
     }
     csvRows.push([
-      r.periodo,TIPOS[tipoDe(r)],r.consumoDolares,r.impuestos,r.totalSinSubsidio,r.pctImpuestos,(tipoDe(r)==='cambio' ? '' : r.lecturaAnterior),r.lectura,r.consumoMes,r.costoKw,r.costoKwConImpuestos,r.energiaTotal,r.inyectadaAcum,r.inyectadaMes,r.pctInyectada,r.netoConsumo,r.consumoSinSolar,r.promDia,r.subsidio,r.pctSubsidio,r.valorFactura,r.facturaKw
+      r.periodo,TIPOS[tipoDe(r)],r.consumoDolares,r.impuestos,r.totalSinSubsidio,r.pctImpuestos,(tipoDe(r)==='cambio' ? '' : r.lecturaAnterior),r.lectura,r.consumoMes,r.costoKw,r.costoKwConImpuestos,r.energiaTotal,r.inyectadaAcum,r.inyectadaMes,r.pctInyectada,r.ahorroInyectada,r.netoConsumo,r.consumoSinSolar,r.promDia,r.subsidio,r.pctSubsidio,r.valorFactura,r.facturaKw
     ].join(';'));
   });
   const blob = new Blob(['\ufeff' + csvRows.join('\n')], {type:'text/csv;charset=utf-8;'});
@@ -943,6 +952,7 @@ const AN_METRICAS = {
   valorFactura:         { etiqueta:'Valor a pagar $',         campo:'valorFactura',         fmt:'money', soloConKwh:false },
   impuestos:            { etiqueta:'Impuestos $',             campo:'impuestos',            fmt:'money', soloConKwh:false },
   inyectadaMes:         { etiqueta:'Inyectado por los paneles kWh', campo:'inyectadaMes',   fmt:'qty',   soloConKwh:false },
+  ahorroInyectada:      { etiqueta:'Ahorro por lo inyectado $', campo:'ahorroInyectada',   fmt:'money', soloConKwh:false },
   costoKwConImpuestos:  { etiqueta:'Costo $/kWh con impuestos', campo:'costoKwConImpuestos', fmt:'dec4', soloConKwh:true  }
 };
 let anAniosSel = null;   // años marcados por la usuaria (null = todavía no se ha elegido nada)
@@ -1089,16 +1099,21 @@ function renderAnalisis(){
     subsidio: rows.reduce((s,r)=>s+num(r.subsidio),0),
     pagado: rows.reduce((s,r)=>s+num(r.valorFactura),0),
     kwh: conKwh.reduce((s,r)=>s+num(r.consumoMes),0),
-    inyectada: rows.reduce((s,r)=>s+num(r.inyectadaMes),0)
+    inyectada: rows.reduce((s,r)=>s+num(r.inyectadaMes),0),
+    ahorro: rows.reduce((s,r)=>s+num(r.ahorroInyectada),0),
+    conImpuestos: rows.reduce((s,r)=>s+num(r.totalSinSubsidio),0)
   };
   document.getElementById('anKpiSubsidio').textContent = '$ ' + money(tot.subsidio);
   document.getElementById('anKpiPagado').textContent = '$ ' + money(tot.pagado);
   document.getElementById('anKpiSinSubsidio').textContent = '$ ' + money(tot.pagado + tot.subsidio);
   document.getElementById('anKpiKwh').textContent = qty(tot.kwh);
   document.getElementById('anKpiInyectada').textContent = qty(tot.inyectada);
+  document.getElementById('anKpiAhorro').textContent = '$ ' + money(tot.ahorro);
   document.getElementById('anKpiDia').textContent = anFmt('dec1', div(tot.kwh, conKwh.length * 30));
+  document.getElementById('anKpiPrecio').textContent = '$ ' + dec(div(tot.conImpuestos, tot.kwh));
   document.getElementById('anRango').innerHTML = `Datos desde <b>${anEsc(rows[0].periodo)}</b> hasta <b>${anEsc(rows[rows.length-1].periodo)}</b>: `
-    + `${rows.length} planillas registradas. El subsidio recibido equivale al <b>${pct(div(tot.subsidio, tot.pagado + tot.subsidio))}</b> de lo que habrías pagado sin él.`;
+    + `${rows.length} planillas registradas. El subsidio recibido equivale al <b>${pct(div(tot.subsidio, tot.pagado + tot.subsidio))}</b> de lo que habrías pagado sin él. `
+    + `El <b>ahorro por lo inyectado</b> es lo que habrían costado esos ${qty(tot.inyectada)} kWh al precio con impuestos de cada mes: <b>$ ${money(tot.ahorro)}</b>.`;
 
   // --- Botones de años ---
   document.getElementById('anAnios').innerHTML = anios.map(a =>
@@ -1169,7 +1184,7 @@ function renderAnalisis(){
   document.getElementById('anGraficoSubsidio').innerHTML = anLinea(puntosSub, 'money', '#2e8b57');
 
   // --- Tabla por año ---
-  const cab = ['Año','Planillas','Consumo sin impuestos $','Impuestos $','Subsidio $','Pagado $','Consumo kWh','Inyectado kWh','kWh por día','$/kWh con impuestos'];
+  const cab = ['Año','Planillas','Consumo sin impuestos $','Impuestos $','Subsidio $','Pagado $','Consumo kWh','Inyectado kWh','Ahorro inyectado $','kWh por día','$/kWh con impuestos'];
   let t = '<thead><tr>' + cab.map(h=>'<th>'+h+'</th>').join('') + '</tr></thead><tbody>';
   anios.slice().reverse().forEach(a => {
     const f = rows.filter(r => Number(r.year)===a);
@@ -1178,12 +1193,12 @@ function renderAnalisis(){
     const kwh = fk.reduce((s,r)=>s+num(r.consumoMes),0);
     t += `<tr><td>${a}</td><td>${f.length}</td><td>$ ${money(suma('consumoDolares'))}</td><td>$ ${money(suma('impuestos'))}</td>`
       + `<td class="ok">$ ${money(suma('subsidio'))}</td><td>$ ${money(suma('valorFactura'))}</td><td>${qty(kwh)}</td>`
-      + `<td>${qty(suma('inyectadaMes'))}</td><td>${anFmt('dec1', div(kwh, fk.length * 30))}</td>`
+      + `<td>${qty(suma('inyectadaMes'))}</td><td class="ok">$ ${money(suma('ahorroInyectada'))}</td><td>${anFmt('dec1', div(kwh, fk.length * 30))}</td>`
       + `<td>$ ${dec(div(suma('consumoDolares') + suma('impuestos'), kwh))}</td></tr>`;
   });
   const sumaTotal = campo => rows.reduce((s,r)=>s+num(r[campo]),0);
   t += `<tr class="an-total"><td>Total</td><td>${rows.length}</td><td>$ ${money(sumaTotal('consumoDolares'))}</td><td>$ ${money(sumaTotal('impuestos'))}</td>`
-    + `<td>$ ${money(tot.subsidio)}</td><td>$ ${money(tot.pagado)}</td><td>${qty(tot.kwh)}</td><td>${qty(tot.inyectada)}</td>`
+    + `<td>$ ${money(tot.subsidio)}</td><td>$ ${money(tot.pagado)}</td><td>${qty(tot.kwh)}</td><td>${qty(tot.inyectada)}</td><td>$ ${money(tot.ahorro)}</td>`
     + `<td>${anFmt('dec1', div(tot.kwh, conKwh.length * 30))}</td><td>$ ${dec(div(sumaTotal('consumoDolares') + sumaTotal('impuestos'), tot.kwh))}</td></tr>`;
   t += '</tbody>';
   document.getElementById('anTablaAnios').innerHTML = t;
