@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v12</title>
+<title>Consumo Energía Pacífica v13</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -44,15 +44,42 @@ tr.independiente td.calc{background:#eef2f7;color:#94a3b8}
 tr.independiente td:first-child{background:#eef2f7}
 .dash{color:#94a3b8}
 .nuevo{color:#166534;font-weight:bold;font-size:11px}
-@media(max-width:1000px){.form-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}}
+nav.tabs{display:flex;gap:8px;justify-content:center;background:var(--azul);padding:0 16px 12px}
+nav.tabs button{background:#33628c;color:#dbeafe;border-radius:10px 10px 0 0;padding:11px 20px;font-size:14px}
+nav.tabs button.activa{background:white;color:var(--azul)}
+.kpis-an{grid-template-columns:repeat(6,1fr)}
+.kpi-verde{background:var(--verde);border-color:#b6d7a8} .kpi-verde b{color:#166534}
+.an-controles{grid-template-columns:repeat(3,minmax(200px,1fr));align-items:end}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 12px}
+.chip{background:#eef2f7;color:#334155;border:1px solid var(--borde);border-radius:999px;padding:7px 15px;font-size:13px}
+.chip.activa{background:var(--azul);color:white;border-color:var(--azul)}
+.chip-todos{background:#fff2cc;color:#7c4a03;border-color:#e5c76b}
+.grafico{border:1px solid var(--borde);border-radius:12px;background:white;padding:8px;overflow-x:auto}
+.grafico svg{display:block;width:100%;height:auto;min-width:440px}
+.an-eje{font-size:13px;fill:#64748b;font-family:Arial,Helvetica,sans-serif}
+.an-vacio{text-align:center;color:#64748b;padding:38px 10px;margin:0}
+.leyenda{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:13px;color:#475569}
+.leyenda-item{display:flex;align-items:center;gap:6px}
+.leyenda-item i{width:13px;height:13px;border-radius:3px;display:inline-block}
+.tabla-an{max-height:none}
+.tabla-an table{min-width:1050px}
+.tabla-an td:first-child{background:white}
+tr.an-total td{background:var(--azul2);font-weight:bold;border-top:2px solid var(--azul)}
+@media(max-width:1000px){.form-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.kpis-an{grid-template-columns:1fr 1fr}.an-controles{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
   <h1>Reporte Mensual de Consumo de Energía</h1>
   <p>Ingreso de planillas + cálculos automáticos. El reporte muestra el último mes arriba.</p>
+<nav class="tabs">
+  <button id="btnTabPlanillas" class="activa" onclick="mostrarTab('planillas')">📋 Planillas</button>
+  <button id="btnTabAnalisis" onclick="mostrarTab('analisis')">📈 Gráficos y análisis</button>
+</nav>
 </header>
 <main>
+
+<div id="tabPlanillas">
 
 <section class="card">
   <h2 id="formTitle">Ingresar nueva planilla</h2>
@@ -132,6 +159,68 @@ tr.independiente td:first-child{background:#eef2f7}
   </div>
 </section>
 
+</div>
+
+<div id="tabAnalisis" hidden>
+
+<section class="card">
+  <h2>Lo que llevo acumulado</h2>
+  <div class="kpis kpis-an">
+    <div class="kpi kpi-verde"><b id="anKpiSubsidio">-</b><span>Subsidio recibido (todos los años)</span></div>
+    <div class="kpi"><b id="anKpiPagado">-</b><span>Total pagado</span></div>
+    <div class="kpi"><b id="anKpiSinSubsidio">-</b><span>Habría pagado sin subsidio</span></div>
+    <div class="kpi"><b id="anKpiKwh">-</b><span>Consumo total kWh</span></div>
+    <div class="kpi kpi-verde"><b id="anKpiInyectada">-</b><span>Inyectado por los paneles kWh</span></div>
+    <div class="kpi"><b id="anKpiDia">-</b><span>Promedio kWh por día</span></div>
+  </div>
+  <div class="notice" id="anRango"></div>
+</section>
+
+<section class="card">
+  <h2>Comparar</h2>
+  <div class="form-grid an-controles">
+    <div>
+      <label>Qué quiero comparar</label>
+      <select id="anModo" onchange="renderAnalisis()">
+        <option value="anioMes">Año contra año, mes a mes</option>
+        <option value="anioTotal">Totales de cada año</option>
+        <option value="mesEnAnios">Un mismo mes en cada año</option>
+        <option value="linea">Línea de tiempo mes a mes</option>
+      </select>
+    </div>
+    <div>
+      <label>Qué quiero medir</label>
+      <select id="anMetrica" onchange="renderAnalisis()"></select>
+    </div>
+    <div id="anWrapMes">
+      <label>Mes a comparar</label>
+      <select id="anMes" onchange="renderAnalisis()"></select>
+    </div>
+  </div>
+  <div id="anWrapAnios">
+    <label>Años que entran en el gráfico</label>
+    <div id="anAnios" class="chips"></div>
+  </div>
+  <div id="anGrafico" class="grafico"></div>
+  <div id="anLeyenda" class="leyenda"></div>
+  <div class="notice" id="anComentario"></div>
+</section>
+
+<section class="card">
+  <h2>Subsidio acumulado mes a mes</h2>
+  <div id="anGraficoSubsidio" class="grafico"></div>
+  <div class="notice">Cada punto muestra cuánto subsidio llevas recibido desde el primer mes registrado hasta ese mes.</div>
+</section>
+
+<section class="card">
+  <h2>Resumen por año</h2>
+  <div class="table-wrap tabla-an">
+    <table id="anTablaAnios"></table>
+  </div>
+</section>
+
+</div>
+
 </main>
 <script>
 const MESES = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
@@ -199,7 +288,7 @@ const STORAGE_KEY = 'energiaPacificaDatosV10';
 const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
 // fv = versión de fórmula con la que se escribió cada fila (12 = valor consumo sin impuestos). Las filas sin fv son de la fórmula vieja.
 const FV = 12;
-const VERSION_APP = 12;
+const VERSION_APP = 13;
 let datos = [];
 let editId = null;
 
@@ -579,6 +668,7 @@ function recalcularYRenderizar(save=true){
   renderResumenSeleccionado();
   renderTabla(ordenarReciente(calc));
   if(save) guardarLocal();
+  renderAnalisis();
 }
 
 // Ajusta el formulario de arriba según el tipo de línea elegido.
@@ -841,8 +931,267 @@ function limpiarCalculadora(){
   document.getElementById('calcResultado').value = '';
 }
 
+
+/* ===== Pestaña "Gráficos y análisis" =====
+   Todo se dibuja con SVG hecho a mano: la app sigue siendo un solo archivo que abre sin internet. */
+const AN_COLORES = ['#1f4e79','#2e8b57','#b45309','#7c3aed','#0891b2','#be123c','#65a30d','#c026d3'];
+const AN_METRICAS = {
+  consumoDolares:       { etiqueta:'Consumo sin impuestos $', campo:'consumoDolares',       fmt:'money', soloConKwh:false },
+  consumoMes:           { etiqueta:'Consumo del mes kWh',     campo:'consumoMes',           fmt:'qty',   soloConKwh:true  },
+  promDia:              { etiqueta:'Consumo por día kWh',     campo:'promDia',              fmt:'dec1',  soloConKwh:true  },
+  subsidio:             { etiqueta:'Subsidio $',              campo:'subsidio',             fmt:'money', soloConKwh:false },
+  valorFactura:         { etiqueta:'Valor a pagar $',         campo:'valorFactura',         fmt:'money', soloConKwh:false },
+  impuestos:            { etiqueta:'Impuestos $',             campo:'impuestos',            fmt:'money', soloConKwh:false },
+  inyectadaMes:         { etiqueta:'Inyectado por los paneles kWh', campo:'inyectadaMes',   fmt:'qty',   soloConKwh:false },
+  costoKwConImpuestos:  { etiqueta:'Costo $/kWh con impuestos', campo:'costoKwConImpuestos', fmt:'dec4', soloConKwh:true  }
+};
+let anAniosSel = null;   // años marcados por la usuaria (null = todavía no se ha elegido nada)
+
+function mostrarTab(nombre){
+  document.getElementById('tabPlanillas').hidden = nombre !== 'planillas';
+  document.getElementById('tabAnalisis').hidden = nombre !== 'analisis';
+  document.getElementById('btnTabPlanillas').classList.toggle('activa', nombre === 'planillas');
+  document.getElementById('btnTabAnalisis').classList.toggle('activa', nombre === 'analisis');
+  if(nombre === 'analisis') renderAnalisis();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function anFilas(){ return calcular().filter(r => !esCierre(r)); }
+function anAnios(rows){ return [...new Set(rows.map(r => Number(r.year)))].sort((a,b)=>a-b); }
+function anColor(anio, anios){ return AN_COLORES[anios.indexOf(anio) % AN_COLORES.length]; }
+function anEsc(t){ return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function anFmt(fmt, v){
+  const n = Number(v||0);
+  if(fmt === 'money') return '$ ' + money(n);
+  if(fmt === 'qty')   return qty(n);
+  if(fmt === 'dec1')  return n.toLocaleString('es-EC',{minimumFractionDigits:1,maximumFractionDigits:1});
+  if(fmt === 'dec4')  return '$ ' + dec(n);
+  return String(n);
+}
+// Versión corta para las marcas del eje vertical.
+function anFmtEje(fmt, v){
+  const n = Number(v||0);
+  if(fmt === 'dec4') return '$ ' + n.toLocaleString('es-EC',{minimumFractionDigits:2,maximumFractionDigits:2});
+  if(fmt === 'money') return '$ ' + n.toLocaleString('es-EC',{minimumFractionDigits:0,maximumFractionDigits:0});
+  if(fmt === 'dec1') return n.toLocaleString('es-EC',{minimumFractionDigits:1,maximumFractionDigits:1});
+  return n.toLocaleString('es-EC',{minimumFractionDigits:0,maximumFractionDigits:0});
+}
+// Redondea el tope del eje hacia arriba a un número "bonito".
+function anTope(max){
+  if(!(max > 0)) return 1;
+  const exp = Math.pow(10, Math.floor(Math.log10(max)));
+  const paso = [1,1.25,1.5,2,2.5,3,4,5,7.5,10].find(p => p*exp >= max) || 10;
+  return paso * exp;
+}
+
+// Marco común de los gráficos: ejes, líneas guía y área de dibujo.
+function anMarco(opts){
+  const A = { w:1000, h:400, izq:78, der:18, arr:18, aba:opts.abajo || 46 };
+  const x0 = A.izq, x1 = A.w - A.der, y0 = A.arr, y1 = A.h - A.aba;
+  const tope = anTope(opts.max);
+  const lineas = 5;
+  let guias = '';
+  for(let i=0; i<=lineas; i++){
+    const v = tope * i / lineas;
+    const y = y1 - (y1 - y0) * (i / lineas);
+    guias += `<line x1="${x0}" y1="${y.toFixed(1)}" x2="${x1}" y2="${y.toFixed(1)}" stroke="#e5e7eb"/>`;
+    guias += `<text x="${x0 - 8}" y="${(y + 4).toFixed(1)}" text-anchor="end" class="an-eje">${anEsc(anFmtEje(opts.fmt, v))}</text>`;
+  }
+  const escala = v => y1 - (y1 - y0) * (Math.max(0, Number(v)||0) / tope);
+  return { A, x0, x1, y0, y1, tope, guias, escala,
+    ejeX:`<line x1="${x0}" y1="${y1}" x2="${x1}" y2="${y1}" stroke="#94a3b8"/>` };
+}
+function anSvg(contenido, alto){
+  return `<svg viewBox="0 0 1000 ${alto || 400}" preserveAspectRatio="xMidYMid meet" role="img">${contenido}</svg>`;
+}
+function anVacio(mensaje){ return `<p class="an-vacio">${anEsc(mensaje)}</p>`; }
+
+// Barras: una categoría en el eje X y una o varias series (por ejemplo, un color por año).
+function anBarras(categorias, series, fmt){
+  const valores = series.flatMap(s => s.valores.filter(v => v !== null && v !== undefined));
+  if(!valores.length) return anVacio('No hay datos para esta combinación.');
+  const m = anMarco({ max: Math.max(...valores), fmt });
+  const ancho = (m.x1 - m.x0) / categorias.length;
+  const huecoGrupo = Math.min(10, ancho * 0.18);
+  const anchoBarra = Math.max(2, (ancho - huecoGrupo) / series.length);
+  let barras = '', etiquetas = '';
+  categorias.forEach((cat, i) => {
+    const xCat = m.x0 + ancho * i;
+    etiquetas += `<text x="${(xCat + ancho/2).toFixed(1)}" y="${m.y1 + 20}" text-anchor="middle" class="an-eje">${anEsc(cat)}</text>`;
+    series.forEach((s, j) => {
+      const v = s.valores[i];
+      if(v === null || v === undefined) return;
+      const x = xCat + huecoGrupo/2 + anchoBarra * j;
+      const y = m.escala(v);
+      const alto = Math.max(0, m.y1 - y);
+      barras += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(anchoBarra - 1).toFixed(1)}" height="${alto.toFixed(1)}" fill="${s.color}" rx="2">`
+        + `<title>${anEsc(s.nombre + ' · ' + cat + ': ' + anFmt(fmt, v))}</title></rect>`;
+    });
+  });
+  return anSvg(m.guias + barras + m.ejeX + etiquetas);
+}
+
+// Línea de tiempo: un punto por mes, en orden.
+function anLinea(puntos, fmt, color){
+  const valores = puntos.map(p => p.valor).filter(v => v !== null && v !== undefined);
+  if(valores.length < 2) return anVacio('Hacen falta al menos dos meses con datos para dibujar la línea.');
+  const m = anMarco({ max: Math.max(...valores), fmt, abajo: 62 });
+  const paso = (m.x1 - m.x0) / Math.max(1, puntos.length - 1);
+  const coords = puntos.map((p, i) => ({ ...p, x: m.x0 + paso * i, y: m.escala(p.valor) }));
+  const camino = coords.map((c, i) => (i ? 'L' : 'M') + c.x.toFixed(1) + ' ' + c.y.toFixed(1)).join(' ');
+  const area = camino + ` L${coords[coords.length-1].x.toFixed(1)} ${m.y1} L${coords[0].x.toFixed(1)} ${m.y1} Z`;
+  const cada = Math.max(1, Math.ceil(puntos.length / 14));
+  let marcas = '', bolitas = '';
+  coords.forEach((c, i) => {
+    bolitas += `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${puntos.length > 30 ? 2.5 : 3.5}" fill="${color}">`
+      + `<title>${anEsc(c.etiqueta + ': ' + anFmt(fmt, c.valor))}</title></circle>`;
+    if(i % cada === 0 || i === coords.length - 1) {
+      marcas += `<text x="${c.x.toFixed(1)}" y="${m.y1 + 20}" text-anchor="end" class="an-eje" transform="rotate(-35 ${c.x.toFixed(1)} ${m.y1 + 20})">${anEsc(c.etiquetaCorta)}</text>`;
+    }
+  });
+  return anSvg(m.guias + `<path d="${area}" fill="${color}" opacity="0.12"/><path d="${camino}" fill="none" stroke="${color}" stroke-width="2.5"/>` + bolitas + m.ejeX + marcas);
+}
+
+function anLeyenda(series){
+  if(series.length < 2) return '';
+  return series.map(s => `<span class="leyenda-item"><i style="background:${s.color}"></i>${anEsc(s.nombre)}</span>`).join('');
+}
+
+function llenarSelectsAnalisis(){
+  const met = document.getElementById('anMetrica');
+  met.innerHTML = Object.keys(AN_METRICAS).map(k => `<option value="${k}">${AN_METRICAS[k].etiqueta}</option>`).join('');
+  document.getElementById('anMes').innerHTML = MESES.map((m,i)=>`<option value="${i+1}">${m}</option>`).join('');
+}
+
+function anAlternarAnio(anio){
+  if(!anAniosSel) anAniosSel = new Set(anAnios(anFilas()));   // null = estaban todos marcados
+  if(anAniosSel.has(anio)) { if(anAniosSel.size > 1) anAniosSel.delete(anio); }
+  else anAniosSel.add(anio);
+  renderAnalisis();
+}
+function anTodosLosAnios(){ anAniosSel = null; renderAnalisis(); }
+
+function renderAnalisis(){
+  if(document.getElementById('tabAnalisis').hidden) return;
+  const rows = anFilas();
+  const anios = anAnios(rows);
+  if(!rows.length || !anios.length){
+    document.getElementById('anGrafico').innerHTML = anVacio('Todavía no hay planillas registradas.');
+    return;
+  }
+  if(anAniosSel) { anAniosSel = new Set([...anAniosSel].filter(a => anios.includes(a))); if(!anAniosSel.size) anAniosSel = null; }
+  const marcados = anAniosSel ? anios.filter(a => anAniosSel.has(a)) : anios;
+
+  // --- Tarjetas de arriba: todo el histórico, sin filtrar ---
+  const conKwh = rows.filter(r => r.consumoMes > 0);
+  const tot = {
+    subsidio: rows.reduce((s,r)=>s+num(r.subsidio),0),
+    pagado: rows.reduce((s,r)=>s+num(r.valorFactura),0),
+    kwh: conKwh.reduce((s,r)=>s+num(r.consumoMes),0),
+    inyectada: rows.reduce((s,r)=>s+num(r.inyectadaMes),0)
+  };
+  document.getElementById('anKpiSubsidio').textContent = '$ ' + money(tot.subsidio);
+  document.getElementById('anKpiPagado').textContent = '$ ' + money(tot.pagado);
+  document.getElementById('anKpiSinSubsidio').textContent = '$ ' + money(tot.pagado + tot.subsidio);
+  document.getElementById('anKpiKwh').textContent = qty(tot.kwh);
+  document.getElementById('anKpiInyectada').textContent = qty(tot.inyectada);
+  document.getElementById('anKpiDia').textContent = anFmt('dec1', div(tot.kwh, conKwh.length * 30));
+  document.getElementById('anRango').innerHTML = `Datos desde <b>${anEsc(rows[0].periodo)}</b> hasta <b>${anEsc(rows[rows.length-1].periodo)}</b>: `
+    + `${rows.length} planillas registradas. El subsidio recibido equivale al <b>${pct(div(tot.subsidio, tot.pagado + tot.subsidio))}</b> de lo que habrías pagado sin él.`;
+
+  // --- Botones de años ---
+  document.getElementById('anAnios').innerHTML = anios.map(a =>
+    `<button type="button" class="chip${marcados.includes(a)?' activa':''}" onclick="anAlternarAnio(${a})">${a}</button>`).join('')
+    + `<button type="button" class="chip chip-todos" onclick="anTodosLosAnios()">Todos</button>`;
+
+  // --- Gráfico principal ---
+  const modo = document.getElementById('anModo').value;
+  const claveMet = document.getElementById('anMetrica').value;
+  const met = AN_METRICAS[claveMet] || AN_METRICAS.consumoDolares;
+  const mesElegido = Number(document.getElementById('anMes').value) || 1;
+  document.getElementById('anWrapMes').style.display = modo === 'mesEnAnios' ? '' : 'none';
+  document.getElementById('anWrapAnios').style.display = modo === 'anioTotal' ? 'none' : '';
+
+  const usables = rows.filter(r => !met.soloConKwh || r.consumoMes > 0);
+  const valor = r => num(r[met.campo]);
+  // En los totales del año, los promedios y los $/kWh se promedian; el resto se suma.
+  const esPromedio = claveMet === 'promDia' || claveMet === 'costoKwConImpuestos';
+  const resumir = arr => !arr.length ? null : (esPromedio ? arr.reduce((s,r)=>s+valor(r),0)/arr.length : arr.reduce((s,r)=>s+valor(r),0));
+
+  let html = '', series = [], comentario = '';
+  if(modo === 'anioMes') {
+    series = marcados.map(a => ({
+      nombre: String(a), color: anColor(a, anios),
+      valores: MESES.map((_, i) => {
+        const r = usables.find(x => Number(x.year)===a && Number(x.month)===i+1);
+        return r ? valor(r) : null;
+      })
+    }));
+    html = anBarras(MESES.map(m => m.slice(0,3)), series, met.fmt);
+    comentario = `Cada grupo es un mes del año y cada color un año, para ver en qué meses subes o bajas.`;
+  } else if(modo === 'anioTotal') {
+    const cats = anios.map(String);
+    const valores = anios.map(a => resumir(usables.filter(r => Number(r.year)===a)));
+    series = [{ nombre: met.etiqueta, color: AN_COLORES[0], valores }];
+    html = anBarras(cats, series, met.fmt);
+    const completos = anios.filter(a => usables.filter(r => Number(r.year)===a).length === 12);
+    comentario = esPromedio
+      ? 'Cada barra es el promedio del año.'
+      : 'Cada barra es la suma del año.' + (completos.length < anios.length ? ' Ojo: los años con menos de 12 planillas quedan más bajos porque tienen menos meses.' : '');
+  } else if(modo === 'mesEnAnios') {
+    const cats = anios.map(String);
+    const valores = anios.map(a => {
+      const r = usables.find(x => Number(x.year)===a && Number(x.month)===mesElegido);
+      return r ? valor(r) : null;
+    });
+    series = [{ nombre: MESES[mesElegido-1], color: AN_COLORES[1], valores }];
+    html = anBarras(cats, series, met.fmt);
+    comentario = `Compara el mes de ${MESES[mesElegido-1]} en cada año, para ver cómo cambió el mismo mes con el tiempo.`;
+  } else {
+    const puntos = usables.filter(r => marcados.includes(Number(r.year))).map(r => ({
+      valor: valor(r), etiqueta: r.periodo, etiquetaCorta: MESES[Number(r.month)-1].slice(0,3) + ' ' + String(r.year).slice(2)
+    }));
+    series = [{ nombre: met.etiqueta, color: AN_COLORES[0] }];
+    html = anLinea(puntos, met.fmt, AN_COLORES[0]);
+    comentario = 'Todos los meses seguidos, del más antiguo al más reciente.';
+  }
+  document.getElementById('anGrafico').innerHTML = html;
+  document.getElementById('anLeyenda').innerHTML = anLeyenda(series);
+  document.getElementById('anComentario').innerHTML = `<b>${anEsc(met.etiqueta)}.</b> ${anEsc(comentario)} Pasa el puntero por una barra o un punto para ver el valor exacto.`;
+
+  // --- Subsidio acumulado (todo el histórico) ---
+  let acum = 0;
+  const puntosSub = rows.map(r => {
+    acum += num(r.subsidio);
+    return { valor: acum, etiqueta: r.periodo, etiquetaCorta: MESES[Number(r.month)-1].slice(0,3) + ' ' + String(r.year).slice(2) };
+  });
+  document.getElementById('anGraficoSubsidio').innerHTML = anLinea(puntosSub, 'money', '#2e8b57');
+
+  // --- Tabla por año ---
+  const cab = ['Año','Planillas','Consumo sin impuestos $','Impuestos $','Subsidio $','Pagado $','Consumo kWh','Inyectado kWh','kWh por día','$/kWh con impuestos'];
+  let t = '<thead><tr>' + cab.map(h=>'<th>'+h+'</th>').join('') + '</tr></thead><tbody>';
+  anios.slice().reverse().forEach(a => {
+    const f = rows.filter(r => Number(r.year)===a);
+    const fk = f.filter(r => r.consumoMes > 0);
+    const suma = campo => f.reduce((s,r)=>s+num(r[campo]),0);
+    const kwh = fk.reduce((s,r)=>s+num(r.consumoMes),0);
+    t += `<tr><td>${a}</td><td>${f.length}</td><td>$ ${money(suma('consumoDolares'))}</td><td>$ ${money(suma('impuestos'))}</td>`
+      + `<td class="ok">$ ${money(suma('subsidio'))}</td><td>$ ${money(suma('valorFactura'))}</td><td>${qty(kwh)}</td>`
+      + `<td>${qty(suma('inyectadaMes'))}</td><td>${anFmt('dec1', div(kwh, fk.length * 30))}</td>`
+      + `<td>$ ${dec(div(suma('consumoDolares') + suma('impuestos'), kwh))}</td></tr>`;
+  });
+  const sumaTotal = campo => rows.reduce((s,r)=>s+num(r[campo]),0);
+  t += `<tr class="an-total"><td>Total</td><td>${rows.length}</td><td>$ ${money(sumaTotal('consumoDolares'))}</td><td>$ ${money(sumaTotal('impuestos'))}</td>`
+    + `<td>$ ${money(tot.subsidio)}</td><td>$ ${money(tot.pagado)}</td><td>${qty(tot.kwh)}</td><td>${qty(tot.inyectada)}</td>`
+    + `<td>${anFmt('dec1', div(tot.kwh, conKwh.length * 30))}</td><td>$ ${dec(div(sumaTotal('consumoDolares') + sumaTotal('impuestos'), tot.kwh))}</td></tr>`;
+  t += '</tbody>';
+  document.getElementById('anTablaAnios').innerHTML = t;
+}
+
 document.addEventListener('DOMContentLoaded', function(){
   llenarSelects();
+  llenarSelectsAnalisis();
   activarSumasConEnter();
   ajustarFormularioTipo();
   cargarDatos();
