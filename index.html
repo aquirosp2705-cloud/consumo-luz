@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v14</title>
+<title>Consumo Energía Pacífica v15</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -292,7 +292,9 @@ const STORAGE_KEY = 'energiaPacificaDatosV10';
 const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
 // fv = versión de fórmula con la que se escribió cada fila (12 = valor consumo sin impuestos). Las filas sin fv son de la fórmula vieja.
 const FV = 12;
-const VERSION_APP = 14;
+// Marca que solo escribió la versión intermedia v12 (publicada unas horas el 2026-09-06): convertía sin estampar fv.
+const MIGRACION_FORMULA_KEY_VIEJA = 'energiaPacificaMigracionFormulaV12';
+const VERSION_APP = 15;
 let datos = [];
 let editId = null;
 
@@ -464,21 +466,37 @@ function insertarCambioMedidor2026(){
 // sumados dos veces para que el total cuadrara. Desde la v12 se escribe el valor consumo sin impuestos y la
 // fórmula los suma: valor consumo = total anterior − 2 × impuestos (el valor a pagar no cambia).
 // Solo convierte las filas que aún no tienen fv (se puede llamar las veces que sea sin volver a convertir).
-function migrarFormulaV12(){
-  let cambio = false;
+// Para las filas del histórico (mismo id que DATOS_INICIALES) decide por el contenido: si el valor ya es el de la
+// fórmula nueva no toca nada, si es el de la fórmula vieja lo convierte, y si quedó convertido dos veces lo repara.
+// sinFvYaConvertidas = true cuando las filas sin fv vienen de la versión intermedia (ya convertidas).
+function migrarFormulaV12(sinFvYaConvertidas){
+  const cerca = (a, b) => Math.abs(num(a) - num(b)) < 0.011;
+  let cambio = false, convertidas = 0, reparadas = 0;
   datos.forEach(d => {
-    if(Number(d.fv) >= FV) return;
-    if(!esCierre(d)) {
-      d.consumoDolares = Math.round((num(d.consumoDolares) - 2 * num(d.impuestos)) * 100) / 100;
-      cambio = true;
+    if(esCierre(d)) { if(!(Number(d.fv) >= FV)) { d.fv = FV; cambio = true; } return; }
+    const ini = DATOS_INICIALES.find(x => x.id === d.id && !esCierre(x));
+    const conocida = !!ini && num(ini.impuestos) > 0 && cerca(d.impuestos, ini.impuestos);
+    if(conocida && cerca(d.consumoDolares, num(ini.consumoDolares) - 2 * num(ini.impuestos))) {
+      // Convertida dos veces (pasó por la versión intermedia y luego por esta): vuelve al valor correcto.
+      d.consumoDolares = num(ini.consumoDolares); d.fv = FV; cambio = true; reparadas++;
+      return;
     }
-    d.fv = FV;
+    if(Number(d.fv) >= FV) return;
+    let convertir;
+    if(conocida && cerca(d.consumoDolares, ini.consumoDolares)) convertir = false;
+    else if(conocida && cerca(d.consumoDolares, num(ini.consumoDolares) + 2 * num(ini.impuestos))) convertir = true;
+    else convertir = !sinFvYaConvertidas;
+    if(convertir) {
+      d.consumoDolares = Math.round((num(d.consumoDolares) - 2 * num(d.impuestos)) * 100) / 100;
+      convertidas++;
+    }
+    d.fv = FV; cambio = true;
   });
   // Agosto 2026 con el desglose exacto de la planilla CNEL: valor consumo 105.56; impuestos 1.41+10.70+14.68+2.41.
   const ago = datos.find(d => !esCierre(d) && Number(d.year)===2026 && Number(d.month)===8
     && Math.abs(num(d.consumoDolares) - 110.47) < 0.011 && Math.abs(num(d.impuestos) - 24.29) < 0.011);
-  if(ago) { ago.consumoDolares = 105.56; ago.impuestos = 29.2; cambio = true; }
-  return cambio;
+  if(ago) { ago.consumoDolares = 105.56; ago.impuestos = 29.2; ago.fv = FV; cambio = true; }
+  return { cambio, convertidas, reparadas };
 }
 
 function cargarDatos(){
@@ -494,7 +512,8 @@ function cargarDatos(){
   let guardar = false;
   if(desdeGuardado) {
     if(!localStorage.getItem(MIGRACION_KEY)) guardar = insertarCambioMedidor2026() || guardar;
-    guardar = migrarFormulaV12() || guardar;
+    const claveVieja = !!localStorage.getItem(MIGRACION_FORMULA_KEY_VIEJA);
+    guardar = migrarFormulaV12(claveVieja).cambio || guardar;
   }
   // La marca se graba siempre: los datos iniciales ya traen el cambio de medidor y no hay que volver a migrar.
   marcarMigracionHecha();
@@ -864,7 +883,9 @@ function restaurarRespaldo(event){
       // Respaldos anteriores a la v11 no traen el cambio de medidor de julio 2026 y los anteriores a la v12 usan la fórmula vieja: se convierten automáticamente.
       let aviso = 'Respaldo restaurado correctamente.';
       if(versionRespaldo < 11 && insertarCambioMedidor2026()) aviso += '\nSe agregó la línea independiente de julio 2026 (medidor anterior) y se marcó julio 2026 como medidor nuevo.';
-      if(migrarFormulaV12()) aviso += '\nLos valores de consumo se pasaron a la fórmula nueva (valor consumo sin impuestos + impuestos − subsidio).';
+      const conv = migrarFormulaV12(versionRespaldo >= 12);
+      if(conv.convertidas) aviso += '\nLos valores de consumo se pasaron a la fórmula nueva (valor consumo sin impuestos + impuestos − subsidio).';
+      if(conv.reparadas) aviso += '\nSe repararon ' + conv.reparadas + ' líneas que estaban convertidas dos veces.';
       marcarMigracionHecha();
       editId = null;
       recalcularYRenderizar(true);
@@ -1101,7 +1122,7 @@ function renderAnalisis(){
     kwh: conKwh.reduce((s,r)=>s+num(r.consumoMes),0),
     inyectada: rows.reduce((s,r)=>s+num(r.inyectadaMes),0),
     ahorro: rows.reduce((s,r)=>s+num(r.ahorroInyectada),0),
-    conImpuestos: rows.reduce((s,r)=>s+num(r.totalSinSubsidio),0)
+    conImpuestos: conKwh.reduce((s,r)=>s+num(r.totalSinSubsidio),0)   // solo planillas con kWh, igual que tot.kwh
   };
   document.getElementById('anKpiSubsidio').textContent = '$ ' + money(tot.subsidio);
   document.getElementById('anKpiPagado').textContent = '$ ' + money(tot.pagado);
@@ -1194,12 +1215,12 @@ function renderAnalisis(){
     t += `<tr><td>${a}</td><td>${f.length}</td><td>$ ${money(suma('consumoDolares'))}</td><td>$ ${money(suma('impuestos'))}</td>`
       + `<td class="ok">$ ${money(suma('subsidio'))}</td><td>$ ${money(suma('valorFactura'))}</td><td>${qty(kwh)}</td>`
       + `<td>${qty(suma('inyectadaMes'))}</td><td class="ok">$ ${money(suma('ahorroInyectada'))}</td><td>${anFmt('dec1', div(kwh, fk.length * 30))}</td>`
-      + `<td>$ ${dec(div(suma('consumoDolares') + suma('impuestos'), kwh))}</td></tr>`;
+      + `<td>$ ${dec(div(fk.reduce((s,r)=>s+num(r.totalSinSubsidio),0), kwh))}</td></tr>`;
   });
   const sumaTotal = campo => rows.reduce((s,r)=>s+num(r[campo]),0);
   t += `<tr class="an-total"><td>Total</td><td>${rows.length}</td><td>$ ${money(sumaTotal('consumoDolares'))}</td><td>$ ${money(sumaTotal('impuestos'))}</td>`
     + `<td>$ ${money(tot.subsidio)}</td><td>$ ${money(tot.pagado)}</td><td>${qty(tot.kwh)}</td><td>${qty(tot.inyectada)}</td><td>$ ${money(tot.ahorro)}</td>`
-    + `<td>${anFmt('dec1', div(tot.kwh, conKwh.length * 30))}</td><td>$ ${dec(div(sumaTotal('consumoDolares') + sumaTotal('impuestos'), tot.kwh))}</td></tr>`;
+    + `<td>${anFmt('dec1', div(tot.kwh, conKwh.length * 30))}</td><td>$ ${dec(div(tot.conImpuestos, tot.kwh))}</td></tr>`;
   t += '</tbody>';
   document.getElementById('anTablaAnios').innerHTML = t;
 }
