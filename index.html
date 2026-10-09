@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v20</title>
+<title>Consumo Energía Pacífica v21</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -66,6 +66,7 @@ nav.tabs button.activa{background:white;color:var(--azul)}
 .var-pct{display:inline-block;font-weight:bold;font-size:14px;border-radius:8px;padding:2px 8px;margin-top:6px}
 .var-bien{background:#dcfce7;color:#166534} .var-mal{background:#fee2e2;color:#b91c1c} .var-igual{background:#e5e7eb;color:#475569}
 td.var-bien,td.var-mal,td.var-igual{font-weight:bold}
+.kpi span.var-pct{display:inline-block;font-size:12px;margin-top:6px} .kpi span.var-bien{color:#166534} .kpi span.var-mal{color:#b91c1c} .kpi span.var-igual{color:#475569}
 .an-vacio{text-align:center;color:#64748b;padding:38px 10px;margin:0}
 .leyenda{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:13px;color:#475569}
 .leyenda-item{display:flex;align-items:center;gap:6px}
@@ -154,13 +155,14 @@ tr.an-total td{background:var(--azul2);font-weight:bold;border-top:2px solid var
   <h2>Resumen mes</h2>
   <div class="form-grid" style="grid-template-columns:minmax(190px,260px) repeat(6,1fr);">
     <div><label>Elegir mes a mostrar</label><select id="resumenSelect" onchange="renderResumenSeleccionado()"></select></div>
-    <div class="kpi"><b id="kpiConsumo">-</b><span>Consumo mes kWh</span></div>
-    <div class="kpi"><b id="kpiCosto">-</b><span>$/kWh con impuestos</span></div>
-    <div class="kpi"><b id="kpiIny">-</b><span>% inyectada</span></div>
-    <div class="kpi"><b id="kpiFactura">-</b><span>Valor a pagar $</span></div>
-    <div class="kpi"><b id="kpiSinSolar">-</b><span>Consumo sin solar kWh</span></div>
-    <div class="kpi kpi-verde"><b id="kpiAhorro">-</b><span>Ahorro inyectado $</span></div>
+    <div class="kpi"><b id="kpiConsumo">-</b><span>Consumo mes kWh</span><span id="kpiConsumoVar" class="var-pct var-igual">—</span></div>
+    <div class="kpi"><b id="kpiCosto">-</b><span>$/kWh con impuestos</span><span id="kpiCostoVar" class="var-pct var-igual">—</span></div>
+    <div class="kpi"><b id="kpiIny">-</b><span>% inyectada</span><span id="kpiInyVar" class="var-pct var-igual">—</span></div>
+    <div class="kpi"><b id="kpiFactura">-</b><span>Valor a pagar $</span><span id="kpiFacturaVar" class="var-pct var-igual">—</span></div>
+    <div class="kpi"><b id="kpiSinSolar">-</b><span>Consumo sin solar kWh</span><span id="kpiSinSolarVar" class="var-pct var-igual">—</span></div>
+    <div class="kpi kpi-verde"><b id="kpiAhorro">-</b><span>Ahorro inyectado $</span><span id="kpiAhorroVar" class="var-pct var-igual">—</span></div>
   </div>
+  <div class="notice" id="resumenVarNota">Cada % compara con el mes anterior. Para ver todos los meses, abre la pestaña <b>📈 Gráficos y análisis</b>.</div>
 </section>
 
 <section class="card">
@@ -330,7 +332,7 @@ const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
 const FV = 12;
 // Marca que solo escribió la versión intermedia v12 (publicada unas horas el 2026-09-06): convertía sin estampar fv.
 const MIGRACION_FORMULA_KEY_VIEJA = 'energiaPacificaMigracionFormulaV12';
-const VERSION_APP = 20;
+const VERSION_APP = 21;
 let datos = [];
 let editId = null;
 
@@ -598,6 +600,17 @@ function renderResumenSeleccionado(){
   document.getElementById('kpiFactura').textContent = '$ ' + money(r.valorFactura);
   document.getElementById('kpiSinSolar').textContent = qty(r.consumoSinSolar);
   document.getElementById('kpiAhorro').textContent = '$ ' + money(r.ahorroInyectada);
+  // % contra el mes anterior debajo de cada tarjeta.
+  const i = calc.indexOf(r), ant = i > 0 ? calc[i-1] : null;
+  [['kpiConsumo','consumoMes',true,false],['kpiCosto','costoKwConImpuestos',true,false],['kpiIny','pctInyectada',true,true],
+   ['kpiFactura','valorFactura',false,false],['kpiSinSolar','consumoSinSolar',true,false],['kpiAhorro','ahorroInyectada',false,true]]
+  .forEach(([kpi, campo, soloConKwh, subeEsBueno]) => {
+    const met = { campo, soloConKwh, subeEsBueno };
+    const c = varCambio(met, r, ant);
+    const el = document.getElementById(kpi + 'Var');
+    el.textContent = varTexto(c) + (ant ? ' vs. ' + ant.periodo : '');
+    el.className = 'var-pct ' + varClase(met, c);
+  });
 }
 
 function opcionesMes(selected){
