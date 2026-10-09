@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v19</title>
+<title>Consumo Energía Pacífica v20</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -58,6 +58,14 @@ nav.tabs button.activa{background:white;color:var(--azul)}
 .grafico{border:1px solid var(--borde);border-radius:12px;background:white;padding:8px;overflow-x:auto}
 .grafico svg{display:block;width:100%;height:auto;min-width:440px}
 .an-eje{font-size:13px;fill:#64748b;font-family:Arial,Helvetica,sans-serif}
+.var-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.var-card{background:var(--gris);border:1px solid var(--borde);border-radius:12px;padding:12px}
+.var-card .var-tit{font-size:13px;color:#475569}
+.var-card .var-val{font-size:20px;font-weight:bold;color:var(--azul);margin:4px 0}
+.var-card .var-ant{font-size:12px;color:#64748b}
+.var-pct{display:inline-block;font-weight:bold;font-size:14px;border-radius:8px;padding:2px 8px;margin-top:6px}
+.var-bien{background:#dcfce7;color:#166534} .var-mal{background:#fee2e2;color:#b91c1c} .var-igual{background:#e5e7eb;color:#475569}
+td.var-bien,td.var-mal,td.var-igual{font-weight:bold}
 .an-vacio{text-align:center;color:#64748b;padding:38px 10px;margin:0}
 .leyenda{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:13px;color:#475569}
 .leyenda-item{display:flex;align-items:center;gap:6px}
@@ -66,8 +74,8 @@ nav.tabs button.activa{background:white;color:var(--azul)}
 .tabla-an table{min-width:1180px}
 .tabla-an td:first-child{background:white}
 tr.an-total td{background:var(--azul2);font-weight:bold;border-top:2px solid var(--azul)}
-@media(max-width:1250px){.kpis-an{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:1000px){.form-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.kpis-an{grid-template-columns:1fr 1fr}.an-controles{grid-template-columns:1fr}.an-periodo{grid-template-columns:1fr 1fr}}
+@media(max-width:1250px){.kpis-an{grid-template-columns:repeat(3,1fr)}.var-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:1000px){.form-grid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.kpis-an{grid-template-columns:1fr 1fr}.an-controles{grid-template-columns:1fr}.an-periodo{grid-template-columns:1fr 1fr}.var-grid{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -165,6 +173,23 @@ tr.an-total td{background:var(--azul2);font-weight:bold;border-top:2px solid var
 </div>
 
 <div id="tabAnalisis" hidden>
+
+<section class="card">
+  <h2>Variación contra el mes anterior</h2>
+  <div class="form-grid an-periodo">
+    <div><label>Mes a revisar</label><select id="varMes" onchange="renderVariacion()"></select></div>
+  </div>
+  <div id="varTarjetas" class="var-grid"></div>
+  <div class="notice" id="varNota"></div>
+  <h2 style="margin-top:18px">Mes a mes</h2>
+  <div class="table-wrap tabla-an">
+    <table id="varTabla"></table>
+  </div>
+  <div class="notice">
+    Cada porcentaje compara el mes con la planilla anterior. Verde = te favorece (pagas o consumes menos, o recibes más subsidio o inyectas más); rojo = lo contrario.
+    "—" quiere decir que no se puede comparar (no hay mes anterior o ese mes no tiene consumo kWh calculable).
+  </div>
+</section>
 
 <section class="card">
   <h2>Lo que llevo acumulado</h2>
@@ -305,7 +330,7 @@ const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
 const FV = 12;
 // Marca que solo escribió la versión intermedia v12 (publicada unas horas el 2026-09-06): convertía sin estampar fv.
 const MIGRACION_FORMULA_KEY_VIEJA = 'energiaPacificaMigracionFormulaV12';
-const VERSION_APP = 19;
+const VERSION_APP = 20;
 let datos = [];
 let editId = null;
 
@@ -1169,8 +1194,75 @@ function anTotales(arr){
   };
 }
 
+// Indicadores del bloque "Variación contra el mes anterior". subeEsBueno = true cuando subir te favorece.
+const VAR_METRICAS = [
+  { etiqueta:'Valor a pagar $',          campo:'valorFactura',        fmt:'money', soloConKwh:false, subeEsBueno:false, tabla:true },
+  { etiqueta:'Consumo del mes kWh',      campo:'consumoMes',          fmt:'qty',   soloConKwh:true,  subeEsBueno:false, tabla:true },
+  { etiqueta:'Valor consumo $',          campo:'consumoDolares',      fmt:'money', soloConKwh:false, subeEsBueno:false, tabla:true },
+  { etiqueta:'Impuestos $',              campo:'impuestos',           fmt:'money', soloConKwh:false, subeEsBueno:false, tabla:true },
+  { etiqueta:'Subsidio $',               campo:'subsidio',            fmt:'money', soloConKwh:false, subeEsBueno:true,  tabla:true },
+  { etiqueta:'Inyectado por los paneles kWh', campo:'inyectadaMes',   fmt:'qty',   soloConKwh:false, subeEsBueno:true,  tabla:true },
+  { etiqueta:'Costo $/kWh con impuestos', campo:'costoKwConImpuestos', fmt:'dec4', soloConKwh:true,  subeEsBueno:false, tabla:false },
+  { etiqueta:'Consumo por día kWh',      campo:'promDia',             fmt:'dec1',  soloConKwh:true,  subeEsBueno:false, tabla:false }
+];
+// Los meses sin consumo calculable (primera planilla) no se comparan en kWh.
+function varTieneKwh(r){ return Number(r.consumoMes) > 0; }
+// Devuelve la variación (0.12 = +12 %) o null si no se puede comparar.
+function varCambio(met, act, ant){
+  if(!act || !ant) return null;
+  if(met.soloConKwh && (!varTieneKwh(act) || !varTieneKwh(ant))) return null;
+  const a = Number(act[met.campo])||0, b = Number(ant[met.campo])||0;
+  if(Math.abs(b) < 0.000001) return null;
+  return (a - b) / Math.abs(b);
+}
+function varClase(met, c){
+  if(c === null) return 'var-igual';
+  if(Math.abs(c) < 0.0005) return 'var-igual';
+  return ((c > 0) === met.subeEsBueno) ? 'var-bien' : 'var-mal';
+}
+function varTexto(c){
+  if(c === null) return '—';
+  const flecha = Math.abs(c) < 0.0005 ? '=' : (c > 0 ? '▲' : '▼');
+  return flecha + ' ' + (c > 0 ? '+' : '') + (c*100).toLocaleString('es-EC',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%';
+}
+function renderVariacion(){
+  const rows = anFilas();
+  const sel = document.getElementById('varMes');
+  if(!rows.length){ document.getElementById('varTarjetas').innerHTML = anVacio('Todavía no hay planillas registradas.'); sel.innerHTML=''; document.getElementById('varTabla').innerHTML=''; document.getElementById('varNota').textContent=''; return; }
+  const recientes = rows.slice().reverse();
+  const elegido = sel.value;
+  sel.innerHTML = recientes.map(r => `<option value="${anEsc(r.id)}">${anEsc(r.periodo)}</option>`).join('');
+  sel.value = recientes.some(r => r.id === elegido) ? elegido : recientes[0].id;
+  const i = rows.findIndex(r => r.id === sel.value);
+  const act = rows[i], ant = i > 0 ? rows[i-1] : null;
+  document.getElementById('varTarjetas').innerHTML = VAR_METRICAS.map(m => {
+    const c = varCambio(m, act, ant);
+    const sinKwh = m.soloConKwh && !varTieneKwh(act);
+    const valor = sinKwh ? '—' : anFmt(m.fmt, act[m.campo]);
+    const antTxt = !ant ? 'Sin mes anterior' : 'Antes (' + ant.periodo + '): ' + ((m.soloConKwh && !varTieneKwh(ant)) ? '—' : anFmt(m.fmt, ant[m.campo]));
+    return `<div class="var-card"><div class="var-tit">${anEsc(m.etiqueta)}</div><div class="var-val">${anEsc(valor)}</div>`
+      + `<div class="var-ant">${anEsc(antTxt)}</div><span class="var-pct ${varClase(m, c)}">${varTexto(c)}</span></div>`;
+  }).join('');
+  const cPagar = varCambio(VAR_METRICAS[0], act, ant);
+  document.getElementById('varNota').innerHTML = !ant ? `<b>${anEsc(act.periodo)}</b> es la primera planilla registrada: no hay mes anterior para comparar.`
+    : `En <b>${anEsc(act.periodo)}</b> el valor a pagar fue <b>$ ${money(act.valorFactura)}</b> contra <b>$ ${money(ant.valorFactura)}</b> en ${anEsc(ant.periodo)}`
+      + (cPagar === null ? '.' : `: ${Math.abs(cPagar) < 0.0005 ? 'prácticamente igual' : (cPagar > 0 ? 'subió' : 'bajó') + ' un <b>' + (Math.abs(cPagar)*100).toLocaleString('es-EC',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%</b>'}.`);
+  const metsTabla = VAR_METRICAS.filter(m => m.tabla);
+  let html = '<tr><th>Mes</th>' + metsTabla.map(m => `<th>${anEsc(m.etiqueta)}</th><th>% vs. mes anterior</th>`).join('') + '</tr>';
+  for(let k = rows.length - 1; k >= 0; k--){
+    const r = rows[k], p = k > 0 ? rows[k-1] : null;
+    html += `<tr><td>${anEsc(r.periodo)}</td>` + metsTabla.map(m => {
+      const c = varCambio(m, r, p);
+      const v = (m.soloConKwh && !varTieneKwh(r)) ? '—' : anFmt(m.fmt, r[m.campo]);
+      return `<td>${anEsc(v)}</td><td class="${varClase(m, c)}">${varTexto(c)}</td>`;
+    }).join('') + '</tr>';
+  }
+  document.getElementById('varTabla').innerHTML = html;
+}
+
 function renderAnalisis(){
   if(document.getElementById('tabAnalisis').hidden) return;
+  renderVariacion();
   const rows = anFilas();
   const anios = anAnios(rows);
   if(!rows.length || !anios.length){
