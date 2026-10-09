@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v18</title>
+<title>Consumo Energía Pacífica v19</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -296,7 +296,7 @@ const DATOS_INICIALES = [
   {"id": "m_1783448213661", "year": 2026, "month": 6, "tipo": "normal", "consumoDolares": 94.27, "impuestos": 19.89, "lectura": 23476, "inyectadaMes": 94, "subsidio": 45.16, "fv": 12},
   {"id": "cierre_2026_07", "year": 2026, "month": 7, "tipo": "cierre", "lecturaAnterior": 27751, "lectura": 0, "consumoMes": 0, "inyectadaAcum": 4275, "inyectadaMes": 0, "consumoDolares": 0, "impuestos": 0, "subsidio": 0, "fv": 12},
   {"id": "m_1786458170253", "year": 2026, "month": 7, "tipo": "cambio", "consumoDolares": 103.1, "impuestos": 28.61, "lectura": 564, "inyectadaMes": 69, "subsidio": 52.26, "consumoMesManual": 960, "fv": 12},
-  {"id": "m_1788711415099", "year": 2026, "month": 8, "tipo": "normal", "consumoDolares": 105.56, "impuestos": 29.2, "lectura": 1572, "inyectadaMes": 100, "subsidio": 53.49, "fv": 12},
+  {"id": "m_1788711415099", "year": 2026, "month": 8, "tipo": "normal", "consumoDolares": 105.56, "impuestos": 29.2, "lectura": 1472, "inyectadaMes": 100, "subsidio": 53.49, "fv": 12},
   {"id": "planilla_2026_09", "year": 2026, "month": 9, "tipo": "normal", "consumoDolares": 142.31, "impuestos": 38.04, "lectura": 2794, "inyectadaMes": 85, "subsidio": 71.87, "fv": 12}
 ];
 const STORAGE_KEY = 'energiaPacificaDatosV10';
@@ -305,7 +305,7 @@ const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
 const FV = 12;
 // Marca que solo escribió la versión intermedia v12 (publicada unas horas el 2026-09-06): convertía sin estampar fv.
 const MIGRACION_FORMULA_KEY_VIEJA = 'energiaPacificaMigracionFormulaV12';
-const VERSION_APP = 18;
+const VERSION_APP = 19;
 let datos = [];
 let editId = null;
 
@@ -510,12 +510,13 @@ function migrarFormulaV12(sinFvYaConvertidas){
   return { cambio, convertidas, reparadas };
 }
 
-// Septiembre 2026 (planilla CNEL emitida 08-10-2026): lectura anterior 1572, así que la lectura de agosto
-// es 1572 (estaba escrita 1472). Agrega septiembre si aún no existe. Se puede llamar las veces que sea.
+// Septiembre 2026 (planilla CNEL emitida 08-10-2026): agrega la línea nueva si aún no existe.
+// La v18 cambió la lectura de agosto de 1472 a 1572; agosto no se toca, así que la v19 la devuelve a 1472.
+// Se puede llamar las veces que sea.
 function migrarSeptiembre2026(){
   let cambio = false;
-  const ago = datos.find(d => !esCierre(d) && Number(d.year)===2026 && Number(d.month)===8 && num(d.lectura)===1472);
-  if(ago) { ago.lectura = 1572; cambio = true; }
+  const ago = datos.find(d => d.id==='m_1788711415099' && num(d.lectura)===1572);
+  if(ago) { ago.lectura = 1472; cambio = true; }
   const haySep = datos.some(d => !esCierre(d) && Number(d.year)===2026 && Number(d.month)===9);
   if(!haySep) {
     const ini = DATOS_INICIALES.find(x => x.id === 'planilla_2026_09');
