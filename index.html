@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v22</title>
+<title>Consumo Energía Pacífica v23</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -340,7 +340,7 @@ const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
 const FV = 12;
 // Marca que solo escribió la versión intermedia v12 (publicada unas horas el 2026-09-06): convertía sin estampar fv.
 const MIGRACION_FORMULA_KEY_VIEJA = 'energiaPacificaMigracionFormulaV12';
-const VERSION_APP = 22;
+const VERSION_APP = 23;
 let datos = [];
 let editId = null;
 
@@ -792,6 +792,7 @@ function ajustarFormularioTipo(){
 const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
 const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 let pdfjsCargando = null;
+let facturaPendiente = null; // número de la factura leída que se guardará con ➕ Agregar
 function cargarPdfJs(){
   if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
   if(!pdfjsCargando) pdfjsCargando = new Promise((ok, mal) => {
@@ -825,7 +826,9 @@ function facturaLeerValores(lineas){
   const N = '(\\d+(?:\\.\\d+)?)';
   const buscar = (re) => { const m = texto.match(re); return m ? Number(m[1]) : null; };
   const fechaDesde = texto.match(/fecha desde\s+(\d{2})-(\d{2})-(\d{4})/);
+  const nro = texto.match(/nro\. factura\s+([\d-]+)/);
   const r = {
+    factura: nro ? nro[1] : null,
     month: fechaDesde ? Number(fechaDesde[2]) : null,
     year: fechaDesde ? Number(fechaDesde[3]) : null,
     consumoDolares: buscar(new RegExp('valor consumo\\s+' + N)),
@@ -845,6 +848,7 @@ function facturaLeerValores(lineas){
   return r;
 }
 function ocultarResultadoFactura(){
+  facturaPendiente = null;
   const box = document.getElementById('facturaResultado');
   if(box) { box.style.display = 'none'; box.innerHTML = ''; }
 }
@@ -889,6 +893,16 @@ async function leerFacturaPdf(event){
     return;
   }
 
+  // Factura ya subida: mismo número de factura, o ya hay una línea de ese mes. No se llena nada.
+  const repetida = datos.find(d => !esCierre(d) && ((v.factura && d.factura === v.factura)
+    || (v.month && v.year && Number(d.year) === v.year && Number(d.month) === v.month)));
+  if(repetida) {
+    limpiarFormulario();
+    mostrarResultadoFactura('<b>⛔ Factura ya subida.</b> La factura de ' + anEsc(periodoTexto(repetida)) + ' ya está en la tabla, así que no se llenó nada y no se puede agregar otra vez.'
+      + ' Si necesitas corregir ese mes, usa <b>Editar arriba</b> en su línea de la tabla.', 'factura-mal');
+    return;
+  }
+
   // Línea nueva, tipo normal. Los campos quedan con la suma escrita (ej. 1.41+14.37+19.85+2.41) para que se vea de dónde sale.
   document.getElementById('tipo').value = 'normal';
   ajustarFormularioTipo();
@@ -913,8 +927,6 @@ async function leerFacturaPdf(event){
        : '⚠️ <b>No cuadra</b> con el valor total de la factura ($' + money(v.valorTotal) + '); diferencia $' + money(v.valorTotal - calculado) + '. Revisa la factura: puede tener otro cargo.') + '</li>';
   if(faltan.length) html += '<li>⚠️ No se encontró en el PDF: ' + faltan.map(anEsc).join(', ') + '. Escríbelo a mano.</li>';
   if(v.month && v.year) {
-    const existe = datos.find(d => Number(d.year) === v.year && Number(d.month) === v.month && !esCierre(d));
-    if(existe) html += '<li>⚠️ Ya hay una línea de ' + anEsc(periodo) + ' en la tabla. Si la agregas quedará repetida.</li>';
     const anteriores = ordenarCronologico(datos).filter(d => !esCierre(d) && periodoKey(d) < v.year*100 + v.month);
     const prev = anteriores[anteriores.length - 1];
     if(prev && v.lecturaAnterior !== null && num(prev.lectura) !== v.lecturaAnterior)
@@ -922,6 +934,7 @@ async function leerFacturaPdf(event){
   }
   html += '</ul>';
   mostrarResultadoFactura(html, cuadra && !faltan.length ? 'factura-ok' : 'factura-mal');
+  facturaPendiente = v.factura;
 }
 
 function limpiarFormulario(){
@@ -987,6 +1000,11 @@ function guardarPlanilla(){
 
   const mismoPeriodo = datos.find(d => d.id !== editId && Number(d.year)===year && Number(d.month)===month && esCierre(d) === cierre);
   if(mismoPeriodo && !confirm('Ya existe una línea para ' + periodoTexto(registro) + '. ¿Deseas agregar otra de todos modos?')) return;
+
+  if(!editId && !cierre && facturaPendiente) {
+    if(datos.some(d => d.factura === facturaPendiente)) { alert('Factura ya subida: esta factura ya está en la tabla.'); return; }
+    registro.factura = facturaPendiente;
+  }
 
   if(editId) {
     const idx = datos.findIndex(d=>d.id===editId);
