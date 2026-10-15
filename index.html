@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consumo Energía Pacífica v21</title>
+<title>Consumo Energía Pacífica v22</title>
 <style>
 :root {
   --azul:#1f4e79; --azul2:#eaf2f8; --amarillo:#fff2cc; --verde:#d9ead3; --gris:#f6f7f9; --borde:#d7dde5; --rojo:#b91c1c;
@@ -24,6 +24,8 @@ button{border:0;border-radius:10px;padding:10px 13px;font-weight:bold;cursor:poi
 button.sec{background:#64748b} button.danger{background:#b91c1c} button.good{background:#15803d} button.warn{background:#b45309}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .notice{font-size:13px;background:#fff7ed;border:1px solid #fed7aa;border-radius:10px;padding:10px;margin-top:10px}
+.factura-ok{background:#ecfdf5;border-color:#a7f3d0} .factura-mal{background:#fef2f2;border-color:#fecaca}
+.factura-res ul{margin:6px 0 0;padding-left:18px}
 .kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
 .kpi{background:var(--azul2);border:1px solid #cfe2f3;border-radius:12px;padding:12px;text-align:center}
 .kpi b{display:block;font-size:19px;color:var(--azul)} .kpi span{font-size:12px;color:#475569}
@@ -94,6 +96,12 @@ tr.an-total td{background:var(--azul2);font-weight:bold;border-top:2px solid var
 
 <section class="card">
   <h2 id="formTitle">Ingresar nueva planilla</h2>
+  <div class="actions" style="margin:0 0 12px">
+    <button class="good" onclick="document.getElementById('facturaFile').click()">📄 Subir factura PDF</button>
+    <input id="facturaFile" type="file" accept=".pdf,application/pdf" style="display:none" onchange="leerFacturaPdf(event)">
+    <span style="font-size:12px;color:#475569;align-self:center">Llena los campos con la factura de CNEL. Revisa y presiona ➕ Agregar.</span>
+  </div>
+  <div id="facturaResultado" class="notice factura-res" style="display:none;margin:0 0 12px"></div>
   <div class="form-grid">
     <div><label>Mes</label><select id="month"></select></div>
     <div><label>Año</label><select id="year"></select></div>
@@ -332,7 +340,7 @@ const MIGRACION_KEY = 'energiaPacificaMigracionMedidor2026';
 const FV = 12;
 // Marca que solo escribió la versión intermedia v12 (publicada unas horas el 2026-09-06): convertía sin estampar fv.
 const MIGRACION_FORMULA_KEY_VIEJA = 'energiaPacificaMigracionFormulaV12';
-const VERSION_APP = 21;
+const VERSION_APP = 22;
 let datos = [];
 let editId = null;
 
@@ -779,7 +787,145 @@ function ajustarFormularioTipo(){
   if(tipo !== 'cambio') document.getElementById('consumoMesManual').value = '';
 }
 
+
+// ===== Factura PDF: se lee en este navegador (el PDF no se sube a ningún lado) =====
+const PDFJS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+const PDFJS_WORKER_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+let pdfjsCargando = null;
+function cargarPdfJs(){
+  if(window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  if(!pdfjsCargando) pdfjsCargando = new Promise((ok, mal) => {
+    const s = document.createElement('script');
+    s.src = PDFJS_URL;
+    s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL; ok(window.pdfjsLib); };
+    s.onerror = () => { pdfjsCargando = null; mal(new Error('No se pudo cargar el lector de PDF (revisa la conexión a internet).')); };
+    document.head.appendChild(s);
+  });
+  return pdfjsCargando;
+}
+// Agrupa los fragmentos de texto de cada página en líneas (misma altura), de izquierda a derecha.
+function facturaLineas(paginasItems){
+  const lineas = [];
+  paginasItems.forEach(items => {
+    const filas = [];
+    items.forEach(it => {
+      if(!it.str || !it.str.trim()) return;
+      const x = it.transform[4], y = it.transform[5];
+      let fila = filas.find(f => Math.abs(f.y - y) < 3);
+      if(!fila) { fila = { y, items: [] }; filas.push(fila); }
+      fila.items.push({ x, s: it.str });
+    });
+    filas.sort((a,b) => b.y - a.y).forEach(f => lineas.push(f.items.sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ')));
+  });
+  return lineas;
+}
+// Lee los valores de una planilla CNEL a partir de sus líneas de texto.
+function facturaLeerValores(lineas){
+  const texto = lineas.map(l => l.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/\s+/g,' ')).join('\n');
+  const N = '(\\d+(?:\\.\\d+)?)';
+  const buscar = (re) => { const m = texto.match(re); return m ? Number(m[1]) : null; };
+  const fechaDesde = texto.match(/fecha desde\s+(\d{2})-(\d{2})-(\d{4})/);
+  const r = {
+    month: fechaDesde ? Number(fechaDesde[2]) : null,
+    year: fechaDesde ? Number(fechaDesde[3]) : null,
+    consumoDolares: buscar(new RegExp('valor consumo\\s+' + N)),
+    comercializacion: buscar(new RegExp('comercializacion\\s+' + N)),
+    subsidioCruzado: buscar(new RegExp('subsidio cruzado solidario\\s+' + N)),
+    alumbrado: buscar(new RegExp('servicio alumbrado publico\\s+' + N)),
+    bomberos: buscar(new RegExp('contribucion bomberos\\s+' + N)),
+    subsidioEner: buscar(new RegExp('subsidio ley discapacidad ener\\.?\\s+' + N)),
+    subsidioLey: buscar(new RegExp('subsidio ley discapacidad\\s+' + N)),
+    valorTotal: buscar(new RegExp('valor total \\(usd\\)\\s+' + N)) ?? buscar(new RegExp('valor total\\s+\\$?\\s*' + N)),
+    lectura: null, lecturaAnterior: null, inyectadaMes: null
+  };
+  const activa = texto.match(new RegExp('energia activa total\\s+\\d{2}-\\d{2}-\\d{4}\\s+' + N + '\\s+' + N));
+  if(activa) { r.lectura = Number(activa[1]); r.lecturaAnterior = Number(activa[2]); }
+  const iny = texto.match(new RegExp('energia inyectada a la red\\s+\\d{2}-\\d{2}-\\d{4}\\s+' + N + '\\s+' + N + '\\s+' + N + '\\s+' + N));
+  if(iny) r.inyectadaMes = Number(iny[4]);
+  return r;
+}
+function ocultarResultadoFactura(){
+  const box = document.getElementById('facturaResultado');
+  if(box) { box.style.display = 'none'; box.innerHTML = ''; }
+}
+function mostrarResultadoFactura(html, clase){
+  const box = document.getElementById('facturaResultado');
+  box.className = 'notice factura-res ' + (clase || '');
+  box.innerHTML = html;
+  box.style.display = '';
+}
+function sumaTexto(valores){ return valores.filter(v => v !== null).map(v => v.toFixed(2)).join('+'); }
+async function leerFacturaPdf(event){
+  const archivo = event.target.files && event.target.files[0];
+  event.target.value = '';
+  if(!archivo) return;
+  if(editId) cancelarEdicion();
+  mostrarResultadoFactura('Leyendo la factura <b>' + anEsc(archivo.name) + '</b>…');
+  let v;
+  try {
+    const pdfjsLib = await cargarPdfJs();
+    const doc = await pdfjsLib.getDocument({ data: new Uint8Array(await archivo.arrayBuffer()) }).promise;
+    const paginas = [];
+    for(let i = 1; i <= doc.numPages; i++) paginas.push((await (await doc.getPage(i)).getTextContent()).items);
+    v = facturaLeerValores(facturaLineas(paginas));
+  } catch(e) {
+    mostrarResultadoFactura('No se pudo leer el PDF: ' + anEsc(e.message || e), 'factura-mal');
+    return;
+  }
+  const faltan = [];
+  if(!v.month || !v.year) faltan.push('mes (Fecha desde)');
+  if(v.consumoDolares === null) faltan.push('Valor Consumo');
+  if(v.comercializacion === null) faltan.push('Comercialización');
+  if(v.subsidioCruzado === null) faltan.push('Subsidio Cruzado Solidario');
+  if(v.alumbrado === null) faltan.push('Servicio Alumbrado Público');
+  if(v.bomberos === null) faltan.push('Contribución Bomberos');
+  if(v.subsidioEner === null) faltan.push('Subsidio Ley Discapacidad Ener.');
+  if(v.subsidioLey === null) faltan.push('Subsidio Ley Discapacidad');
+  if(v.lectura === null) faltan.push('Lectura actual (Energía activa total)');
+  if(v.inyectadaMes === null) faltan.push('Energía inyectada a la red');
+  if(v.valorTotal === null) faltan.push('Valor total');
+  if(faltan.length === 11) {
+    mostrarResultadoFactura('Este PDF no parece una factura de CNEL: no se encontró ningún valor. No se cambió nada.', 'factura-mal');
+    return;
+  }
+
+  // Línea nueva, tipo normal. Los campos quedan con la suma escrita (ej. 1.41+14.37+19.85+2.41) para que se vea de dónde sale.
+  document.getElementById('tipo').value = 'normal';
+  ajustarFormularioTipo();
+  if(v.month && v.year) { document.getElementById('month').value = v.month; document.getElementById('year').value = v.year; }
+  const poner = (id, val) => { document.getElementById(id).value = (val === null || val === '') ? '' : val; };
+  poner('consumoDolares', v.consumoDolares === null ? null : v.consumoDolares.toFixed(2));
+  poner('impuestos', sumaTexto([v.comercializacion, v.subsidioCruzado, v.alumbrado, v.bomberos]));
+  poner('subsidio', sumaTexto([v.subsidioEner, v.subsidioLey]));
+  poner('lectura', v.lectura === null ? null : String(v.lectura));
+  poner('inyectadaMes', v.inyectadaMes === null ? null : String(v.inyectadaMes));
+
+  const consumo = v.consumoDolares || 0;
+  const impuestos = [v.comercializacion, v.subsidioCruzado, v.alumbrado, v.bomberos].reduce((a,b)=>a+(b||0),0);
+  const subsidio = (v.subsidioEner || 0) + (v.subsidioLey || 0);
+  const calculado = consumo + impuestos - subsidio;
+  const cuadra = v.valorTotal !== null && Math.abs(calculado - v.valorTotal) < 0.005;
+  const periodo = (v.month && v.year) ? MESES[v.month-1] + ' ' + v.year : '(mes no encontrado)';
+  let html = '<b>Factura leída: ' + anEsc(periodo) + '.</b> Revisa los campos de arriba y presiona <b>➕ Agregar</b> para guardarla como línea nueva.'
+    + '<ul><li>Valor consumo $' + money(consumo) + ' + impuestos $' + money(impuestos) + ' − subsidio $' + money(subsidio) + ' = <b>$' + money(calculado) + '</b>. '
+    + (v.valorTotal === null ? 'No se encontró el valor total para comparar.'
+       : cuadra ? '✅ Cuadra con el valor total de la factura ($' + money(v.valorTotal) + ').'
+       : '⚠️ <b>No cuadra</b> con el valor total de la factura ($' + money(v.valorTotal) + '); diferencia $' + money(v.valorTotal - calculado) + '. Revisa la factura: puede tener otro cargo.') + '</li>';
+  if(faltan.length) html += '<li>⚠️ No se encontró en el PDF: ' + faltan.map(anEsc).join(', ') + '. Escríbelo a mano.</li>';
+  if(v.month && v.year) {
+    const existe = datos.find(d => Number(d.year) === v.year && Number(d.month) === v.month && !esCierre(d));
+    if(existe) html += '<li>⚠️ Ya hay una línea de ' + anEsc(periodo) + ' en la tabla. Si la agregas quedará repetida.</li>';
+    const anteriores = ordenarCronologico(datos).filter(d => !esCierre(d) && periodoKey(d) < v.year*100 + v.month);
+    const prev = anteriores[anteriores.length - 1];
+    if(prev && v.lecturaAnterior !== null && num(prev.lectura) !== v.lecturaAnterior)
+      html += '<li>La factura dice lectura anterior ' + qty(v.lecturaAnterior) + ' y en la tabla ' + anEsc(periodoTexto(prev)) + ' tiene ' + qty(num(prev.lectura)) + '. Solo es aviso: los meses anteriores no se cambian.</li>';
+  }
+  html += '</ul>';
+  mostrarResultadoFactura(html, cuadra && !faltan.length ? 'factura-ok' : 'factura-mal');
+}
+
 function limpiarFormulario(){
+  ocultarResultadoFactura();
   ['consumoDolares','impuestos','lectura','inyectadaMes','subsidio','consumoMesManual'].forEach(id=>document.getElementById(id).value='');
   const hoy = new Date();
   document.getElementById('month').value = hoy.getMonth()+1;
